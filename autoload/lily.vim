@@ -1,3 +1,28 @@
+"
+" Core lily functions
+"
+
+"
+" Utility
+"
+
+function! lily#ShouldAllowAutocomplete() " {{{
+    if &ft == 'gitcommit'
+        return 1
+    endif
+
+    return 0
+endfunction " }}}
+
+function! lily#_opt(opt_name, default) " {{{
+    let fullName = 'lily#' . a:opt_name
+    let bufferVal = get(b:, fullName, a:default)
+    if bufferVal != a:default
+        return bufferVal
+    endif
+
+    return get(g:, fullName, a:default)
+endfunction " }}}
 
 "
 " Startup
@@ -13,8 +38,8 @@ function! lily#Enable() " {{{
         return
     endif
 
-    if &ft == 'gitcommit'
-        if get(g:, 'lily_complete_issues', 1)
+    if lily#ShouldAllowAutocomplete()
+        if lily#_opt('complete_issues', 1)
             call lily#complete#EnableIssuesCompletion()
         endif
     endif
