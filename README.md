@@ -7,6 +7,10 @@ Interactive Git(hub) plugin for Vim
 
 - Fancy issue omni-completion (type the name and tab 
     complete the number)
+
+![lily-issues-complete](https://cloud.githubusercontent.com/assets/816150/11995935/609850b2-aa27-11e5-87f2-1a8a026c1f62.gif)
+
+
 - @mention omni-completion
 
 ## Dependencies:
