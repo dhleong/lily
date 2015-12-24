@@ -2,7 +2,11 @@
 " Issues fetching
 "
 
-function lily#issues#Get(repo_dir, ...) " {{{
+function! lily#issues#Prefetch(repo_dir) " {{{
+    " TODO: prefetch
+endfunction " }}}
+
+function! lily#issues#Get(repo_dir, ...) " {{{
     " Get issues for the repo at repo_dir,
     "  preferably from cache
 

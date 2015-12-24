@@ -181,8 +181,8 @@ endfunction " }}}
 function! s:EnableCursorMovedAutocommands() " {{{
     augroup lilycursormove
         autocmd!
-        autocmd CursorMovedI * call s:OnCursorMovedInsertMode()
-        autocmd CursorMoved * call s:OnCursorMovedNormalMode()
+        autocmd CursorMovedI <buffer> call s:OnCursorMovedInsertMode()
+        autocmd CursorMoved <buffer> call s:OnCursorMovedNormalMode()
     augroup END
 endfunction " }}}
 
@@ -194,7 +194,7 @@ function! lily#complete#EnableBaseCompletion() " {{{
     call s:EnableCursorMovedAutocommands()
     augroup lily
         autocmd!
-        autocmd InsertEnter * call s:OnInsertEnter()
+        autocmd InsertEnter <buffer> call s:OnInsertEnter()
     augroup END
 
     let b:_lily_completion = 1

@@ -44,6 +44,10 @@ function! lily#Enable() " {{{
         endif
     endif
 
+    if lily#_opt('prefetch_issues', 1)
+        call lily#issues#Prefetch(repo_dir)
+    endif
+
     let b:_lily_init = 1
 endfunction " }}}
 
