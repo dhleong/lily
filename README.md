@@ -30,7 +30,6 @@ Completion works best if you also use [YouCompleteMe](https://github.com/Vallori
 ## Demos
 
 Issue completion by name:
+
 ![lily-issues-complete](https://cloud.githubusercontent.com/assets/816150/11995935/609850b2-aa27-11e5-87f2-1a8a026c1f62.gif)
-
-
 
