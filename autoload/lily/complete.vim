@@ -30,11 +30,16 @@ function! s:FinishComplete() " {{{
     augroup lily_end
         autocmd!
     augroup END
+    augroup! lily_end
 
-    let opt = b:_lily_completeopt
+    if !empty(get(b:, '_lily_completeopt', ''))
+        let opt = b:_lily_completeopt
 
-    " restore
-    exe 'set completeopt=' . opt
+        " restore
+        " FIXME: This is actually ignored by
+        "  vim right now....
+        exe 'setlocal completeopt=' . opt
+    endif
 endfunction " }}}
 
 function! s:TriggerComplete(...) " {{{
@@ -43,8 +48,17 @@ function! s:TriggerComplete(...) " {{{
         autocmd CompleteDone <buffer> call <SID>FinishComplete()
     augroup END
 
-    let b:_lily_completeopt = &completeopt
-    set completeopt-=longest
+    if empty(get(b:, '_lily_completeopt', ''))
+        let b:_lily_completeopt = &completeopt
+    endif
+
+    " we need menuone for issues completion to
+    "  make sense; longest is not necessary for lily.
+    "  These are inspired by YCM, and needed here
+    "  in case YCM is not also installed
+    setlocal completeopt-=longest
+    setlocal completeopt-=menu
+    setlocal completeopt+=menuone
 
     if a:0
         return a:1 . "\<C-X>\<C-O>\<C-P>"
@@ -172,16 +186,26 @@ function! s:EnableCursorMovedAutocommands() " {{{
     augroup END
 endfunction " }}}
 
-function! lily#complete#EnableIssuesCompletion() " {{{
-    setlocal omnifunc=lily#complete#func
+function! lily#complete#EnableBaseCompletion() " {{{
+    " Basic, shared completion opts
 
-    " bind semantic triggers
-    inoremap <buffer> <expr> # <SID>TriggerComplete('#')
+    setlocal omnifunc=lily#complete#func
 
     call s:EnableCursorMovedAutocommands()
     augroup lily
+        autocmd!
         autocmd InsertEnter * call s:OnInsertEnter()
     augroup END
+
+    let b:_lily_completion = 1
+endfunction " }}}
+
+function! lily#complete#EnableIssuesCompletion() " {{{
+    call lily#complete#EnableBaseCompletion()
+
+    " bind semantic trigger
+    inoremap <buffer> <expr> # <SID>TriggerComplete('#')
+
 endfunction " }}}
 
 " vim:ft=vim:fdm=marker
