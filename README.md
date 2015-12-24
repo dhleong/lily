@@ -7,11 +7,12 @@ Interactive Git(hub) plugin for Vim
 
 - Fancy issue omni-completion (type the name and tab 
     complete the number)
+- @mention omni-completion
 
 ## Dependencies:
 
-- [vim-fugitive](http://github.com/tpope/vim-fugitive)
-- [hubr](http://github.com/dhleong/hubr)
+- [vim-fugitive](https://github.com/tpope/vim-fugitive)
+- [hubr](https://github.com/dhleong/hubr)
 
 ## Setup
 
@@ -24,3 +25,4 @@ Plug 'dhleong/hubr'
 Plug 'dhleong/lily'
 ```
 
+Completion works best if you also use [YouCompleteMe](https://github.com/Valloric/YouCompleteMe)

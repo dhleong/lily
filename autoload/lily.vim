@@ -42,10 +42,17 @@ function! lily#Enable() " {{{
         if lily#_opt('complete_issues', 1)
             call lily#complete#EnableIssuesCompletion()
         endif
+        if lily#_opt('complete_mentions', 1)
+            call lily#complete#EnableMentionsCompletion()
+        endif
     endif
 
     if lily#_opt('prefetch_issues', 1)
         call lily#issues#Prefetch(repo_dir)
+    endif
+
+    if lily#_opt('prefetch_mentions', 1)
+        call lily#users#Prefetch(repo_dir)
     endif
 
     let b:_lily_init = 1

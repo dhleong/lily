@@ -68,9 +68,11 @@ function! s:TriggerComplete(...) " {{{
         let prefix = s:FindPrefix()
         if prefix ==# ''
             return
-        elseif prefix !~# '^#'
+        elseif prefix !~# '^[#@]'
             " We only need to manually trigger
-            " completion for issues
+            " completion for issues or mentions
+            " FIXME: We shouldn't need to trigger
+            "  for @mentions... should we?
             return
         endif
 
@@ -153,21 +155,30 @@ function! lily#complete#func(findstart, base) " {{{
     let items = []
     let matchField = ''
     let wordField = ''
-    if type == '@'
-        " TODO: @mentions?
-        return []
-    elseif type == '#'
-        " TODO: support cross-repo refs
-        let items = lily#issues#Get(repo_dir)
-        let matchField = 'title'
-        let wordField = 'number'
-    endif
+    let menuField = ''
+    try
+        if type == '@'
+            let items = lily#users#Get(repo_dir)
+            let matchField = 'login'
+            let wordField = 'login'
+        elseif type == '#'
+            " TODO: support cross-repo refs
+            let items = lily#issues#Get(repo_dir)
+            let matchField = 'title'
+            let wordField = 'number'
+            let menuField = 'title'
+        endif
+    catch 
+        echo "Unable to load completions"
+        return -3 " stop completion silently
+    endtry
+
 
     let filtered = filter(copy(items),
                 \ 'lily#match#do(v:val, prefix, matchField)')
     let words = map(filtered, "{
         \ 'word': type . get(v:val, wordField),
-        \ 'menu': get(v:val, matchField),
+        \ 'menu': empty(menuField) ? '' : get(v:val, menuField),
         \ 'icase': 1
         \ }")
 
@@ -205,6 +216,14 @@ function! lily#complete#EnableIssuesCompletion() " {{{
 
     " bind semantic trigger
     inoremap <buffer> <expr> # <SID>TriggerComplete('#')
+
+endfunction " }}}
+
+function! lily#complete#EnableMentionsCompletion() " {{{
+    call lily#complete#EnableBaseCompletion()
+
+    " bind semantic trigger
+    inoremap <buffer> <expr> @ <SID>TriggerComplete('@')
 
 endfunction " }}}
 
