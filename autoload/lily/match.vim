@@ -16,3 +16,5 @@ function! lily#match#do(item, input, item_field) " {{{
 
     return lily#match#simple(a:item, a:input, a:item_field)
 endfunction " }}}
+
+" vim:ft=vim:fdm=marker

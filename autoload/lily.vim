@@ -6,6 +6,10 @@
 " Utility
 "
 
+function! lily#repo_dir() " {{{
+    return fugitive#repo().dir()
+endfunction " }}}
+
 function! lily#ShouldAllowAutocomplete() " {{{
     if &ft == 'gitcommit'
         return 1
@@ -33,7 +37,7 @@ function! lily#Enable() " {{{
         return
     endif
 
-    let repo_dir = fugitive#repo().dir()
+    let repo_dir = lily#repo_dir()
     if repo_dir ==# ''
         return
     endif
