@@ -5,6 +5,17 @@
 let s:issues_cache = {}
 let s:cache_timeout = 60 * 5 " in seconds
 
+function! lily#issues#c()
+    return s:issues_cache
+endfunction
+
+function! lily#issues#Cache(repo_dir, issues) " {{{
+    let s:issues_cache[a:repo_dir] = {
+                \ 'time': localtime(),
+                \ 'data': copy(a:issues)
+                \ }
+endfunction " }}}
+
 function! lily#issues#Prefetch(repo_dir) " {{{
 
     " TODO: prefetch
@@ -24,10 +35,7 @@ function! lily#issues#Get(repo_dir, ...) " {{{
     " TODO: hubr doesn't let us specify the repo dir!
     " This probably does the right thing, though
     let issues = hubr#get_issues({'state':'open'})
-    let s:issues_cache[a:repo_dir] = {
-                \ 'time': now,
-                \ 'data': copy(issues)
-                \ }
+    call lily#issues#Cache(a:repo_dir, issues)
 
     return issues
 

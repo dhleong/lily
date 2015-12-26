@@ -69,10 +69,17 @@ function! s:UpdateIssuesAsync_python(bufno, repo_path) " {{{
     let repo_path = a:repo_path
 
 python << PYEOF
-def _keys(item, keys):
-    return {k: item[k] for k in keys}
+
+def _keys(item, keys, fn=lambda k,v:v):
+    if item is None:
+        return None
+
+    return {k: fn(k, item[k]) for k in keys if item[k] is not None}
 
 class UpdateIssuesCommand(BufAsyncCommand):
+    ISSUE_KEYS = ['title','number','state','body',\
+        'assignee', 'labels']
+
     def __init__(self, bufno, repo_path):
         super(UpdateIssuesCommand, self).__init__(\
             'lily#ui#UpdateIssues', bufno)
@@ -80,7 +87,16 @@ class UpdateIssuesCommand(BufAsyncCommand):
 
     def run(self):
         hubr = Hubr.from_config(self.repo_path + '.hubrrc')
-        return [_keys(i, ['title','number']) for i in hubr.get_issues()]
+        raw = hubr.get_issues()
+        trimmed = [_keys(i, self.ISSUE_KEYS, self._trim) for i in raw]
+        return (self.repo_path, trimmed)
+
+    def _trim(self, key, val):
+        if key == 'assignee':
+            return _keys(val, ['login'])
+        if key == 'labels':
+            return [_keys(l, ['name','color']) for l in val]
+        return val
 
 # main:
 bufno = int(vim.eval('bufno'))
@@ -127,9 +143,13 @@ endfunction " }}}
 " Callback
 "
 
-function! lily#ui#UpdateIssues(bufno, issues) " {{{
+function! lily#ui#UpdateIssues(bufno, repo_dir, issues) " {{{
+    " update the UI
     let titles = map(copy(a:issues), "lily#ui#DescribeIssue(v:val)")
     call s:replace(a:bufno, s:issues_line, titles)
+
+    " go ahead and update the cache
+    call lily#issues#Cache(a:repo_dir, a:issues)
 endfunction " }}}
 
 "
