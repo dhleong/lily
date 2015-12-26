@@ -5,10 +5,6 @@
 let s:issues_cache = {}
 let s:cache_timeout = 60 * 5 " in seconds
 
-function! lily#issues#c()
-    return s:issues_cache
-endfunction
-
 function! lily#issues#Cache(repo_dir, issues) " {{{
     let s:issues_cache[a:repo_dir] = {
                 \ 'time': localtime(),
