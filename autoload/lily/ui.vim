@@ -45,7 +45,6 @@ function! s:replace(bufno, lineno, lines) " {{{
     " let lines = split(a:line, '\r', 1)
 
 py << PYEOF
-GLO = {}
 import vim
 bufno = int(vim.eval('bufno')) # NB int() is crucial
 buf = vim.buffers[bufno]
@@ -62,6 +61,34 @@ if buf:
 PYEOF
 
 endfunction " }}}
+
+function! s:UpdateIssuesAsync_python(bufno, repo_path) " {{{
+    call lily#async#Load()
+
+    let bufno = a:bufno
+    let repo_path = a:repo_path
+
+python << PYEOF
+def _keys(item, keys):
+    return {k: item[k] for k in keys}
+
+class UpdateIssuesCommand(BufAsyncCommand):
+    def __init__(self, bufno, repo_path):
+        super(UpdateIssuesCommand, self).__init__(\
+            'lily#ui#UpdateIssues', bufno)
+        self.repo_path = repo_path
+
+    def run(self):
+        hubr = Hubr.from_config(self.repo_path + '.hubrrc')
+        return [_keys(i, ['title','number']) for i in hubr.get_issues()]
+
+# main:
+bufno = int(vim.eval('bufno'))
+path = vim.eval('repo_path')
+
+UpdateIssuesCommand(bufno, path).start()
+PYEOF
+endfunction " }}}
 " }}}
 
 
@@ -70,7 +97,16 @@ endfunction " }}}
 "
 
 function! s:SupportsAsync() " {{{
-    return lily#_opt('ui_async', 1) && !empty(v:servername)
+    return lily#_opt('ui_async', 1) 
+            \ && !empty(v:servername)
+            \ && has('python')
+endfunction " }}}
+
+function! s:UpdateIssuesAsync(bufno, repo_path) " {{{
+    " TODO: support nvim async, possibly ruby?
+    if has('python')
+        call s:UpdateIssuesAsync_python(a:bufno, a:repo_path)
+    endif
 endfunction " }}}
 
 function! s:DescribeIssuesOpts(opts) " {{{
@@ -151,8 +187,7 @@ function! lily#ui#Show() " {{{
         call add(c, '### (loading issues)')
         let bufno = bufnr('%')
 
-        " TODO: refactor and support neovim async
-        exe 'py update_issues_async(' . bufno . ', "' . hubr#repo_path() . '")'
+        call s:UpdateIssuesAsync(bufno, hubr#repo_path())
     else
         " Although, if they don't support async they might
         "  also not support hubr's json binding... It may
@@ -166,43 +201,5 @@ function! lily#ui#Show() " {{{
     call lily#ui#UpdateWindow(c)
 
 endfunction " }}}
-
-" Async processing python fun {{{
-python << PYEOF
-import threading
-from subprocess import call
-import json as JSON
-
-GLO = {}
-
-def async_callback(fun, *args):
-    """Call a vim callback function remotely"""
-    instance = vim.eval('v:servername')
-    exe = vim.eval('exepath(v:progpath)')
-    
-    expr = fun + '('
-    expr += ','.join([ JSON.dumps(a, separators=(',',':')) for a in args ])
-    expr += ') | redraw!'
-
-    call([exe, '--servername', instance, \
-        '--remote-expr', expr])
-
-def _keys(item, keys):
-    return {k: item[k] for k in keys}
-
-def _do_update_issues(bufno, repo_dir):
-    # issues = hubr(repo_dir).get_issues()
-    hubr = Hubr.from_config(repo_dir + '.hubrrc')
-    issues = hubr.get_issues()
-    # issues = [{"title":"foo"}]
-    async_callback('lily#ui#UpdateIssues', \
-        bufno, \
-        [_keys(i, ["title", "number"]) for i in issues])
-
-def update_issues_async(bufno, repo_dir):
-    threading.Thread(target=_do_update_issues, \
-        args=[bufno, repo_dir]).start()
-PYEOF
-" }}}
 
 " vim:ft=vim:fdm=marker
