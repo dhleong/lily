@@ -220,6 +220,19 @@ function! lily#ui#Show() " {{{
 
     call lily#ui#UpdateWindow(c)
 
+    " temporary hacks: for whatever reason, :bdelete
+    "  in the preview window from :Gstatus, for example,
+    "  is broken from within Lily: the window is cleared,
+    "  but not closed. Hopefully we can figure out what's
+    "  causing that, but this is a decent workaround for now
+    augroup lily_ui
+        autocmd!
+        autocmd BufDelete * 
+                \ if &previewwindow |
+                \   call feedkeys("\<C-W>z", 'n') | 
+                \ endif
+    augroup END
+
 endfunction " }}}
 
 " vim:ft=vim:fdm=marker
