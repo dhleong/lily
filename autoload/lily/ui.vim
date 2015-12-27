@@ -143,6 +143,18 @@ endfunction " }}}
 " Callback
 "
 
+function! s:UiSelect()
+    let line = getline('.')
+    let items = matchlist(line, '.*#\([0-9]*\)\?\].*')
+    let number = items[1]
+    if empty(number)
+        return
+    endif
+
+    echo "Select issue #" . number
+
+endfunction
+
 function! lily#ui#UpdateIssues(bufno, repo_dir, issues) " {{{
     " update the UI
     let titles = map(copy(a:issues), "lily#ui#DescribeIssue(v:val)")
@@ -150,6 +162,9 @@ function! lily#ui#UpdateIssues(bufno, repo_dir, issues) " {{{
 
     " go ahead and update the cache
     call lily#issues#Cache(a:repo_dir, a:issues)
+
+    " position the cursor nicely
+    call cursor(s:issues_line + 1, 0)
 endfunction " }}}
 
 "
@@ -223,6 +238,8 @@ function! lily#ui#Show() " {{{
     endif
 
     call lily#ui#UpdateWindow(c)
+
+    nnoremap <buffer> <silent> <cr> :call <SID>UiSelect()<cr>
 
     " temporary hacks: for whatever reason, :bdelete
     "  in the preview window from :Gstatus, for example,
