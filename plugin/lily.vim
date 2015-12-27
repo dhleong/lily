@@ -14,7 +14,6 @@ function! my_lily.func(candidates)
     " set path, etc.
     exe 'set path=' . pathDir . '**'
     exe 'lcd `=pathDir`' 
-    let b:git_dir = pathDir . '.git'
     call lily#ui#Show()
 endfunction
 call unite#custom#action('directory', 'lily', my_lily)

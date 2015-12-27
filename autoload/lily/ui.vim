@@ -191,6 +191,10 @@ function! lily#ui#Show() " {{{
         tabe
     endif
 
+    " make fugitive happy
+    let b:git_dir = ''
+    call fugitive#detect(expand('%:p'))
+
     " prepare the buffer contents
     let title = "Lily: " . hubr#repo_name()
     let under = repeat('=', len(title))
