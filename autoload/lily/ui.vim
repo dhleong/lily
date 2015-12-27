@@ -143,7 +143,7 @@ endfunction " }}}
 " Callback
 "
 
-function! s:UiSelect()
+function! s:UiSelect() " {{{
     let line = getline('.')
     let items = matchlist(line, '.*#\([0-9]*\)\?\].*')
     let number = items[1]
@@ -151,9 +151,16 @@ function! s:UiSelect()
         return
     endif
 
-    echo "Select issue #" . number
+    let issues = get(b:, 'lily_issues', {})
+    if !has_key(issues, number)
+        echo "No such issue: " . number
+        return
+    endif
 
-endfunction
+    let issue = issues[number]
+    call lily#ui#issue#Show(issue)
+
+endfunction " }}}
 
 function! lily#ui#UpdateIssues(bufno, repo_dir, issues) " {{{
     " update the UI
@@ -162,6 +169,10 @@ function! lily#ui#UpdateIssues(bufno, repo_dir, issues) " {{{
 
     " go ahead and update the cache
     call lily#issues#Cache(a:repo_dir, a:issues)
+    let b:lily_issues = {}
+    for i in a:issues
+        let b:lily_issues[i.number] = i
+    endfor
 
     " position the cursor nicely
     call cursor(s:issues_line + 1, 0)
