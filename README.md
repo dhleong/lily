@@ -8,6 +8,8 @@ More elegant Git(hub) interactions in Vim
 - Fancy issue omni-completion (type the name and tab 
     complete the number)
 - @mention omni-completion
+- Issue-viewing UI, with async loading of issues, comments
+    - Async requires `+python` and `v:servername`
 - [unite.vim](https://github.com/Shougo/unite.vim) action to open the UI
 
 ## Dependencies:
