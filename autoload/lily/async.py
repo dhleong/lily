@@ -36,7 +36,15 @@ class AsyncCommand(object):
     def _do_run(self):
         result = self.run()
 
+        # let subclasses insert args
         args = self._expand_args(result)
+
+        # clean up to avoid silent errors
+        for i in xrange(0, len(args)):
+            if args[i] is None:
+                args[i] = 0
+
+        # send it on over
         self.async_call(self.callbackFn, *args)
 
     def _expand_args(self, args):

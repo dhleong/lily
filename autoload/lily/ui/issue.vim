@@ -30,8 +30,10 @@ class LoadCommentsCommand(HubrAsyncCommand):
 
     def run(self):
         raw = self.hubr().get_comments(self.issue['number'])
-        return [self.keys(i, self.COMMENT_KEYS, self._trim) \
+        nextLink = raw.next()
+        result = [self.keys(i, self.COMMENT_KEYS, self._trim) \
                     for i in raw]
+        return (nextLink, result)
 
     def _trim(self, key, val):
         if key == 'user':
@@ -87,13 +89,15 @@ endfunction " }}}
 " Callback
 "
 
-function! lily#ui#issue#LoadComments(bufno, repo_dir, comments)
+function! lily#ui#issue#LoadComments(bufno, repo_dir, 
+            \ next_link, comments)
 
     " update the UI
     let rawcomments = map(copy(a:comments), 
                 \ "lily#ui#issue#DescribeComment(v:val)")
     let comments = []
 
+    let b:next_link = 0
     if empty(rawcomments)
         call add(comments, '### (No Comments)')
     else
@@ -105,6 +109,12 @@ function! lily#ui#issue#LoadComments(bufno, repo_dir, comments)
             call add(comments, '')
             call extend(comments, desc)
         endfor
+
+        if !empty(a:next_link)
+            let b:next_link = a:next_link
+            call extend(comments, ['', 
+                \ '### Load more (press enter here) ###'])
+        endif
     endif
 
     call lily#async#replace(a:bufno, s:comments_line, comments)
