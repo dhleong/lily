@@ -13,6 +13,9 @@ class AsyncCommand(object):
     def start(self):
         threading.Thread(target=self._do_run).start()
 
+    def error(self, message):
+        self.async_call('lily#ui#Error', message)
+
     def async_call(self, fun, *args):
         """Call a vim callback function remotely"""
         instance = vim.eval('v:servername')
@@ -22,8 +25,10 @@ class AsyncCommand(object):
         expr += ','.join([ JSON.dumps(a, separators=(',',':')) for a in args ])
         expr += ') | redraw!'
 
-        call([exe, '--servername', instance, \
-            '--remote-expr', expr])
+        result = call([exe, '--servername', instance, \
+            '--remote-expr', expr.replace("\\n", "")])
+        if result != 0:
+            self.error("Couldn't send request")
 
     def keys(self, item, keys, fn=lambda k,v:v):
         if item is None:
@@ -34,7 +39,11 @@ class AsyncCommand(object):
                 if item[k] is not None}
 
     def _do_run(self):
-        result = self.run()
+        try:
+            result = self.run()
+        except Exception, e:
+            self.error(repr(e))
+            return
 
         # let subclasses insert args
         args = self._expand_args(result)

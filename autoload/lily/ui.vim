@@ -138,6 +138,10 @@ endfunction " }}}
 " Public interface
 "
 
+function! lily#ui#Error(msg) " {{{
+    echoerr msg
+endfunction " }}}
+
 function! lily#ui#UpdateWindow(lines, ...) " {{{
 
     let opts = a:0 ? a:1 : {}
