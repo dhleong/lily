@@ -2,6 +2,55 @@
 " Issue-viewing UI
 "
 
+let s:comments_line = 0
+let s:comments_start = 0
+
+" Python functions {{{
+function! s:LoadCommentsAsync_python(bufno, repo_path) " {{{
+    call lily#async#Load()
+
+    let bufno = a:bufno
+    let repo_path = a:repo_path
+
+python << PYEOF
+
+def _keys(item, keys, fn=lambda k,v:v):
+    if item is None:
+        return None
+
+    return {k: fn(k, item[k]) for k in keys if item[k] is not None}
+
+class LoadCommentsCommand(HubrAsyncCommand):
+    COMMENT_KEYS = ['body', 'user', 'updated_at']
+
+    def __init__(self, bufno, repo_path):
+        super(LoadCommentsCommand, self).__init__(\
+            'lily#ui#issue#LoadComments', bufno, repo_path)
+        self.issue = vim.bindeval('b:issue')
+
+    def run(self):
+        raw = self.hubr().get_comments(self.issue['number'])
+        return [self.keys(i, self.COMMENT_KEYS, self._trim) \
+                    for i in raw]
+
+    def _trim(self, key, val):
+        if key == 'user':
+            return self.keys(val, ['login'])
+        return val
+
+# main:
+bufno = int(vim.eval('bufno'))
+path = vim.eval('repo_path')
+
+LoadCommentsCommand(bufno, path).start()
+PYEOF
+endfunction " }}}
+" }}}
+
+"
+" Util
+"
+
 function s:CalculateForeground(color) " {{{
     " credit: http://stackoverflow.com/a/1855903
     let r = str2nr(a:color[0:1], 16)
@@ -20,6 +69,53 @@ function s:CalculateForeground(color) " {{{
         return "FFFFFF"
     endif
 endfunction " }}}
+
+function s:LoadCommentsAsync(bufno, repo_path)  " {{{
+    " TODO: support nvim async, possibly ruby?
+    if has('python')
+        call s:LoadCommentsAsync_python(a:bufno, a:repo_path)
+    endif
+endfunction " }}}
+
+function! lily#ui#issue#DescribeComment(comment) " {{{
+    return extend(['### @' . a:comment.user.login,
+                 \ '>   at ' . a:comment.updated_at],
+                 \ split(a:comment.body, '\r'))
+endfunction " }}}
+
+"
+" Callback
+"
+
+function! lily#ui#issue#LoadComments(bufno, repo_dir, comments)
+
+    " update the UI
+    let rawcomments = map(copy(a:comments), 
+                \ "lily#ui#issue#DescribeComment(v:val)")
+    let comments = []
+
+    if empty(rawcomments)
+        call add(comments, '### (No Comments)')
+    else
+        if s:comments_line == s:comments_start
+            call extend(comments, ['## Comments', ''])
+        endif
+
+        for desc in rawcomments
+            call add(comments, '')
+            call extend(comments, desc)
+        endfor
+    endif
+
+    call lily#async#replace(a:bufno, s:comments_line, comments)
+
+    " position the cursor nicely
+    call cursor(s:comments_line + 1, 0)
+endfunction
+
+"
+" Public interface
+"
 
 function lily#ui#issue#Refresh() " {{{
     let issue = get(b:, 'issue', {})
@@ -45,6 +141,22 @@ function lily#ui#issue#Refresh() " {{{
 
     " body
     call extend(contents, split(body, '\r'))
+
+    " load comments (possibly async)
+    let bufno = bufnr('%')
+    let path = hubr#repo_path()
+    if lily#async#IsSupported()
+        " load comments async
+        call extend(contents, ['', '### (loading comments)'])
+        let s:comments_line = len(contents)
+        let s:comments_start = s:comments_line
+        call s:LoadCommentsAsync(bufno, path)
+
+    elseif lily#_opt('auto_load_comments', 1)
+        " TODO: load comments now
+    else
+        " TODO: add a row for loading comments
+    endif
 
     " insert the content
     call append(1, contents)
@@ -98,3 +210,5 @@ function lily#ui#issue#Show(issue) " {{{
     let b:issue = a:issue
     call lily#ui#issue#Refresh()
 endfunction " }}}
+
+" vim:ft=vim:fdm=marker
