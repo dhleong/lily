@@ -34,7 +34,7 @@ Completion works best if you also use [YouCompleteMe](https://github.com/Vallori
 
 Issue completion by name:
 
-![lily-issues-complete](https://cloud.githubusercontent.com/assets/816150/11995935/609850b2-aa27-11e5-87f2-1a8a026c1f62.gif)
+![lily-complete-demo](https://cloud.githubusercontent.com/assets/816150/12022022/d9516fae-ad59-11e5-993e-5773312fb1ff.gif)
 
 ## Ideas
 
