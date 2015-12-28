@@ -124,7 +124,7 @@ endfunction " }}}
 "
 
 function! lily#complete#func(findstart, base) " {{{
-    let repo_dir = fugitive#repo().dir()
+    let repo_dir = lily#repo_dir()
     if !lily#ShouldAllowAutocomplete() || repo_dir ==# ''
         return a:findstart ? -1 : []
     endif
