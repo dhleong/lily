@@ -30,9 +30,13 @@ class LoadCommentsCommand(HubrAsyncCommand):
 
     def run(self):
         raw = self.hubr().get_comments(self.issue['number'])
-        result = [self.keys(i, self.COMMENT_KEYS, self._trim) \
-                    for i in raw]
+        result = self._filter(raw)
         return (raw.next(), result)
+
+    @lily_filter
+    def _filter(self, comments):
+        return [self.keys(i, self.COMMENT_KEYS, self._trim) \
+                    for i in comments]
 
     def _trim(self, key, val):
         if key == 'user':
@@ -100,6 +104,10 @@ function! lily#ui#issue#LoadComments(bufno, repo_dir,
         call add(comments, '### (No Comments)')
     else
         if s:comments_line == s:comments_start
+            " position the cursor nicely
+            call cursor(s:comments_line + 1, 0)
+
+            " insert the header
             call extend(comments, ['## Comments', ''])
         endif
 
@@ -113,16 +121,9 @@ function! lily#ui#issue#LoadComments(bufno, repo_dir,
     " update UI
     call lily#async#replace(a:bufno, s:comments_line, comments)
 
-    " TODO: we can't properly paginate until we have 
-    "  a good way to use the appropriate filtering/trimming
-    "  functions on the input
-
-    " " paginate
-    " s:comments_line = s:comments_line + len(comments)
-    " call lily#ui#pages#OnPage(s:comments_line, a:next_link)
-
-    " position the cursor nicely
-    call cursor(s:comments_line + 1, 0)
+    " paginate
+    s:comments_line = s:comments_line + len(comments)
+    call lily#ui#pages#OnPage(s:comments_line, a:next_link)
 endfunction
 
 "

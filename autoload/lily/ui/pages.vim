@@ -8,14 +8,15 @@ let s:paginate_size = 5
 " Python {{{
 function! s:LoadNextPage_python(callback_fn, next_link) " {{{
     let bufno = bufnr('%')
-    let repo_path = lily#repo_dir()
+    let repo_path = hubr#repo_path()
     let callback = a:callback_fn
     let next_link = a:next_link
 
 python << PYEOF
+GLO = {}
 class NextPageCommand(HubrAsyncCommand):
-    ISSUE_KEYS = ['title','number','state','body',\
-        'assignee', 'labels']
+    # ISSUE_KEYS = ['title','number','state','body',\
+    #     'assignee', 'labels']
 
     def __init__(self, bufno, repo_path, \
             callback, next_link):
@@ -28,25 +29,11 @@ class NextPageCommand(HubrAsyncCommand):
         result = self._filter(raw.json()) # TODO trim?
         return (raw.next(), result)
 
-    #
-    # FIXME: This stuff is important, but we
-    #   need to be able to use "the right one"
-    #   instead of just cheating. Perhaps a
-    #   decorator on the filter function that
-    #   links it to the callback?
-    #
-
-    def _filter(self, issues):
-        return [self.keys(i, self.ISSUE_KEYS, self._trim) \
-                    for i in issues]        
-
-    def _trim(self, key, val):
-        if key == 'assignee':
-            return self.keys(val, ['login'])
-        if key == 'labels':
-            return [self.keys(l, ['name','color']) for l in val]
-        return val
-
+    def _filter(self, json):
+        if LILY_FILTERS.has_key(self.repo_path):
+            fn = LILY_FILTERS[self.repo_path]
+            return fn(json)
+        return json
 
 # main:
 bufno = int(vim.eval('bufno'))

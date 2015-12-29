@@ -2,6 +2,8 @@ import threading
 from subprocess import call
 import json as JSON
 
+LILY_FILTERS = {}
+
 class AsyncCommand(object):
     
     def __init__(self, callbackFn):
@@ -84,3 +86,14 @@ class HubrAsyncCommand(BufAsyncCommand):
         parent.insert(1, self.repo_path)
         return parent
 
+def lily_filter(fn):
+    # wraps the fn to save a closure
+    #  so we can reuse a `self` instance.
+    #  This may be a terrible idea.
+    def wrapper(self, json):
+        def closure(json):
+            return fn(self, json)
+
+        LILY_FILTERS[self.repo_path] = closure
+        return closure(json)
+    return wrapper

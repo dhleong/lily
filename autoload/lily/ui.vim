@@ -54,6 +54,7 @@ class UpdateIssuesCommand(HubrAsyncCommand):
         result = self._filter(raw)
         return (raw.next(), result)
 
+    @lily_filter
     def _filter(self, issues):
         return [self.keys(i, self.ISSUE_KEYS, self._trim) \
                     for i in issues]        
@@ -151,7 +152,8 @@ function! lily#ui#UpdateIssues(bufno, repo_dir,
     endif
 
     " paginate
-    let s:issues_line = s:issues_line + len(a:issues)
+    " (add 1 for the separator line)
+    let s:issues_line = s:issues_line + len(a:issues) + 1
     call lily#ui#pages#OnPage('lily#ui#UpdateIssues',
                 \ s:issues_line, a:next_link)
 endfunction " }}}
