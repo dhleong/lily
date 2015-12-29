@@ -2,8 +2,8 @@
 " Interactive UI core
 "
 
-let s:issues_line = 7
-let s:issues_start = 7
+let b:issues_line = 7
+let b:issues_start = 7
 
 " Python functions {{{
 " Requiring python is gross, but it's the only way to append to
@@ -43,7 +43,7 @@ function! s:UpdateIssuesAsync_python(bufno, repo_path) " {{{
 python << PYEOF
 class UpdateIssuesCommand(HubrAsyncCommand):
     ISSUE_KEYS = ['title','number','state','body',\
-        'assignee', 'labels']
+        'assignee', 'user', 'labels']
 
     def __init__(self, bufno, repo_path):
         super(UpdateIssuesCommand, self).__init__(\
@@ -60,7 +60,7 @@ class UpdateIssuesCommand(HubrAsyncCommand):
                     for i in issues]        
 
     def _trim(self, key, val):
-        if key == 'assignee':
+        if key in ['assignee', 'user']:
             return self.keys(val, ['login'])
         if key == 'labels':
             return [self.keys(l, ['name','color']) for l in val]
@@ -128,19 +128,19 @@ function! lily#ui#UpdateIssues(bufno, repo_dir,
             \ next_link, issues) " {{{
     " update the UI
     let titles = map(copy(a:issues), "lily#ui#DescribeIssue(v:val)")
-    if s:issues_line > s:issues_start
+    if b:issues_line > b:issues_start
         call insert(titles, ' --- ', 0)
     endif
-    call lily#async#replace(a:bufno, s:issues_line, titles)
+    call lily#async#replace(a:bufno, b:issues_line, titles)
 
     let b:lily_issues = {}
     for i in a:issues
         let b:lily_issues[i.number] = i
     endfor
 
-    if s:issues_line == s:issues_start
+    if b:issues_line == b:issues_start
         " position the cursor nicely (if we didn't paginate)
-        call cursor(s:issues_line + 1, 0)
+        call cursor(b:issues_line + 1, 0)
 
         " go ahead and update the cache.
         " NB: In no case do we support completion past
@@ -153,9 +153,9 @@ function! lily#ui#UpdateIssues(bufno, repo_dir,
 
     " paginate
     " (add 1 for the separator line)
-    let s:issues_line = s:issues_line + len(a:issues) + 1
+    let b:issues_line = b:issues_line + len(a:issues) + 1
     call lily#ui#pages#OnPage('lily#ui#UpdateIssues',
-                \ s:issues_line, a:next_link)
+                \ b:issues_line, a:next_link)
 endfunction " }}}
 
 "
@@ -216,6 +216,9 @@ function! lily#ui#Show() " {{{
     call add(c, '')
     call add(c, '> Filter: ' . s:DescribeIssuesOpts(opts))
     call add(c, '')
+
+    let b:issues_start = len(c)
+    let b:issues_line = len(c)
 
     let bufno = bufnr('%')
     let path = hubr#repo_path()

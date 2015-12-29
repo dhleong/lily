@@ -2,8 +2,8 @@
 " Issue-viewing UI
 "
 
-let s:comments_line = 0
-let s:comments_start = 0
+let b:comments_line = 0
+let b:comments_start = 0
 
 " Python functions {{{
 function! s:LoadCommentsAsync_python(bufno, repo_path) " {{{
@@ -93,7 +93,7 @@ endfunction " }}}
 "
 
 function! lily#ui#issue#LoadComments(bufno, repo_dir, 
-            \ next_link, comments)
+            \ next_link, comments) " {{{
 
     " update the UI
     let rawcomments = map(copy(a:comments), 
@@ -103,9 +103,9 @@ function! lily#ui#issue#LoadComments(bufno, repo_dir,
     if empty(rawcomments)
         call add(comments, '### (No Comments)')
     else
-        if s:comments_line == s:comments_start
+        if b:comments_line == b:comments_start
             " position the cursor nicely
-            call cursor(s:comments_line + 1, 0)
+            call cursor(b:comments_line + 1, 0)
 
             " insert the header
             call extend(comments, ['## Comments', ''])
@@ -119,12 +119,12 @@ function! lily#ui#issue#LoadComments(bufno, repo_dir,
     endif
 
     " update UI
-    call lily#async#replace(a:bufno, s:comments_line, comments)
+    call lily#async#replace(a:bufno, b:comments_line, comments)
 
     " paginate
-    s:comments_line = s:comments_line + len(comments)
-    call lily#ui#pages#OnPage(s:comments_line, a:next_link)
-endfunction
+    b:comments_line = b:comments_line + len(comments)
+    call lily#ui#pages#OnPage(b:comments_line, a:next_link)
+endfunction " }}}
 
 "
 " Public interface
@@ -143,10 +143,13 @@ function lily#ui#issue#Refresh() " {{{
 
     norm! ggdG
     call append(0, issue.title)
-    let contents = [repeat('=', len(issue.title)), '']
+    let contents = [repeat('=', len(issue.title))]
+    call add(contents, '> from: @' . issue.user.login)
 
     " labels
-    if !empty(issue.labels)
+    if empty(issue.labels)
+        call add(contents, '')
+    else
         call add(contents, '> ' . join(map(copy(issue.labels), 
                     \ "'['.v:val.name.']'"), ' '))
         call add(contents, '')
@@ -161,8 +164,8 @@ function lily#ui#issue#Refresh() " {{{
     if lily#async#IsSupported()
         " load comments async
         call extend(contents, ['', '### (loading comments)'])
-        let s:comments_line = len(contents)
-        let s:comments_start = s:comments_line
+        let b:comments_line = len(contents)
+        let b:comments_start = b:comments_line
         call s:LoadCommentsAsync(bufno, path)
 
     elseif lily#_opt('auto_load_comments', 1)
