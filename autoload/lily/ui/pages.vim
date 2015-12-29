@@ -85,6 +85,7 @@ function! lily#ui#pages#OnPage(callback_fn, start_line, next_link)
     elseif lily#async#IsSupported()
         " add a pagination autocmd
         augroup lily_paginate
+            autocmd!
             autocmd CursorMoved <buffer> call <SID>OnCursorMoved()
         augroup END
     else

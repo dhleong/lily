@@ -2,8 +2,8 @@
 " Interactive UI core
 "
 
-let b:issues_line = 7
-let b:issues_start = 7
+let s:filter_prompt = '> Filter: '
+let s:filter_keys_on_line = ['cc', 'dd']
 
 " Python functions {{{
 " Requiring python is gross, but it's the only way to append to
@@ -104,6 +104,66 @@ endfunction " }}}
 "
 " Callback
 "
+
+function! s:StartFilter(mode)
+
+    let cursor = getpos('.')
+
+    if index(s:filter_keys_on_line, a:mode) >= 0
+            \ && cursor[1] != b:filter_line
+        " just let them be
+        call feedkeys(a:mode, 'n')
+        return
+    endif
+
+    call cursor(b:filter_line, cursor[2])
+
+    set modifiable
+    set noreadonly
+
+    let b:bar = getline('.')
+    if a:mode == 'cc'
+        call setline('.', s:filter_prompt)
+        call cursor(b:filter_line, cursor[2])
+        call feedkeys('A', 'n')
+    elseif a:mode == 'dd'
+        call setline('.', s:filter_prompt)
+        call cursor(b:filter_line, cursor[2])
+        
+        " update immediately
+        call s:UpdateFilter()
+        return
+    else
+        call feedkeys(a:mode, 'n')
+    endif
+
+    augroup lily_filter
+        autocmd!
+        autocmd! InsertLeave <buffer> call <SID>UpdateFilter()
+    augroup END
+endfunction
+
+function! s:UpdateFilter()
+    augroup lily_filter
+        autocmd!
+    augroup END
+    augroup! lily_filter
+
+    let line = getline(b:filter_line)
+    let rawfilter = line[len(s:filter_prompt):]
+    let filter = {}
+
+    if rawfilter =~# "[ \t]*"
+        call setline(b:filter_line, s:filter_prompt . '(None)')
+    else
+        " TODO: evaluate parts; strip invalid ones
+    endif
+
+    set nomodifiable
+    set readonly
+
+    " TODO: update the filter and re-request (if different)
+endfunction
 
 function! s:UiSelect() " {{{
     let line = getline('.')
@@ -214,7 +274,8 @@ function! lily#ui#Show() " {{{
 
     call add(c, '## Issues')
     call add(c, '')
-    call add(c, '> Filter: ' . s:DescribeIssuesOpts(opts))
+    call add(c, s:filter_prompt . s:DescribeIssuesOpts(opts))
+    let b:filter_line = len(c)
     call add(c, '')
 
     let b:issues_start = len(c)
@@ -236,15 +297,23 @@ function! lily#ui#Show() " {{{
 
     call lily#ui#UpdateWindow(c)
 
+    " add some mappings
     nnoremap <buffer> <silent> <cr> :call <SID>UiSelect()<cr>
 
-    " temporary hacks: for whatever reason, :bdelete
-    "  in the preview window from :Gstatus, for example,
-    "  is broken from within Lily: the window is cleared,
-    "  but not closed. Hopefully we can figure out what's
-    "  causing that, but this is a decent workaround for now
+    for m in ['i', 'a', 'A', 'cc', 'dd']
+        exe 'nnoremap <buffer> <silent> ' .
+                \ m . ' :call <SID>StartFilter("' . 
+                \ m . '")<cr>'
+    endfor
+
     augroup lily_ui
         autocmd!
+
+        " temporary hacks: for whatever reason, :bdelete
+        "  in the preview window from :Gstatus, for example,
+        "  is broken from within Lily: the window is cleared,
+        "  but not closed. Hopefully we can figure out what's
+        "  causing that, but this is a decent workaround for now
         autocmd BufDelete * 
                 \ if &previewwindow |
                 \   call feedkeys("\<C-W>z", 'n') | 
