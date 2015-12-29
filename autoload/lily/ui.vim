@@ -3,6 +3,7 @@
 "
 
 let s:issues_line = 7
+let s:issues_start = 7
 
 " Python functions {{{
 " Requiring python is gross, but it's the only way to append to
@@ -50,8 +51,12 @@ class UpdateIssuesCommand(HubrAsyncCommand):
 
     def run(self):
         raw = self.hubr().get_issues()
+        result = self._filter(raw)
+        return (raw.next(), result)
+
+    def _filter(self, issues):
         return [self.keys(i, self.ISSUE_KEYS, self._trim) \
-                    for i in raw]
+                    for i in issues]        
 
     def _trim(self, key, val):
         if key == 'assignee':
@@ -118,20 +123,37 @@ function! s:UiSelect() " {{{
 
 endfunction " }}}
 
-function! lily#ui#UpdateIssues(bufno, repo_dir, issues) " {{{
+function! lily#ui#UpdateIssues(bufno, repo_dir, 
+            \ next_link, issues) " {{{
     " update the UI
     let titles = map(copy(a:issues), "lily#ui#DescribeIssue(v:val)")
+    if s:issues_line > s:issues_start
+        call insert(titles, ' --- ', 0)
+    endif
     call lily#async#replace(a:bufno, s:issues_line, titles)
 
-    " go ahead and update the cache
-    call lily#issues#Cache(a:repo_dir, a:issues)
     let b:lily_issues = {}
     for i in a:issues
         let b:lily_issues[i.number] = i
     endfor
 
-    " position the cursor nicely
-    call cursor(s:issues_line + 1, 0)
+    if s:issues_line == s:issues_start
+        " position the cursor nicely (if we didn't paginate)
+        call cursor(s:issues_line + 1, 0)
+
+        " go ahead and update the cache.
+        " NB: In no case do we support completion past
+        "  the first page of results. This could be nice,
+        "  but would be expensive; we'd have to precache
+        "  EVERY page to really be sure we found the issue
+        "  (or not). 
+        call lily#issues#Cache(a:repo_dir, a:issues)
+    endif
+
+    " paginate
+    let s:issues_line = s:issues_line + len(a:issues)
+    call lily#ui#pages#OnPage('lily#ui#UpdateIssues',
+                \ s:issues_line, a:next_link)
 endfunction " }}}
 
 "
