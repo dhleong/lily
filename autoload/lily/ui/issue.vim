@@ -119,7 +119,7 @@ function! lily#ui#issue#LoadComments(bufno, repo_dir,
     endif
 
     " update UI
-    call lily#async#replace(a:bufno, b:comments_line, comments)
+    call lily#async#ReplaceOne(a:bufno, b:comments_line, comments)
 
     " paginate
     b:comments_line = b:comments_line + len(comments)

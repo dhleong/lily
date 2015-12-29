@@ -94,6 +94,6 @@ def lily_filter(fn):
         def closure(json):
             return fn(self, json)
 
-        LILY_FILTERS[self.repo_path] = closure
+        LILY_FILTERS[self.callbackFn] = closure
         return closure(json)
     return wrapper

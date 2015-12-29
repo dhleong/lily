@@ -131,7 +131,7 @@ function! lily#ui#UpdateIssues(bufno, repo_dir,
     if b:issues_line > b:issues_start
         call insert(titles, ' --- ', 0)
     endif
-    call lily#async#replace(a:bufno, b:issues_line, titles)
+    call lily#async#ReplaceOne(a:bufno, b:issues_line, titles)
 
     let b:lily_issues = {}
     for i in a:issues

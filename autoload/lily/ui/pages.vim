@@ -13,10 +13,7 @@ function! s:LoadNextPage_python(callback_fn, next_link) " {{{
     let next_link = a:next_link
 
 python << PYEOF
-GLO = {}
 class NextPageCommand(HubrAsyncCommand):
-    # ISSUE_KEYS = ['title','number','state','body',\
-    #     'assignee', 'labels']
 
     def __init__(self, bufno, repo_path, \
             callback, next_link):
@@ -26,12 +23,12 @@ class NextPageCommand(HubrAsyncCommand):
 
     def run(self):
         raw = self.hubr().follow(self.next_link)
-        result = self._filter(raw.json()) # TODO trim?
+        result = self._filter(raw.json())
         return (raw.next(), result)
 
     def _filter(self, json):
-        if LILY_FILTERS.has_key(self.repo_path):
-            fn = LILY_FILTERS[self.repo_path]
+        if LILY_FILTERS.has_key(self.callbackFn):
+            fn = LILY_FILTERS[self.callbackFn]
             return fn(json)
         return json
 
