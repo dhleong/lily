@@ -153,16 +153,20 @@ function! s:UpdateFilter()
     let rawfilter = line[len(s:filter_prompt):]
     let filter = {}
 
-    if rawfilter =~# "[ \t]*"
+    if rawfilter =~# "^[ \t]*$"
+        let b:newFilter = {}
         call setline(b:filter_line, s:filter_prompt . '(None)')
     else
-        " TODO: evaluate parts; strip invalid ones
+        let filter = lily#ui#filter#Parse(rawfilter)
+        let b:newFilter = filter
+        let dumped = lily#ui#filter#Dumps(filter)
+        call setline(b:filter_line, s:filter_prompt . dumped)
     endif
 
     set nomodifiable
     set readonly
 
-    " TODO: update the filter and re-request (if different)
+    " TODO: re-request (if different)
 endfunction
 
 function! s:UiSelect() " {{{

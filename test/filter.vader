@@ -1,0 +1,38 @@
+Execute(Parse Empty Filter):
+  AssertEqual {}, lily#ui#filter#Parse('')
+  AssertEqual {}, lily#ui#filter#Parse('  ')
+
+Execute(Parse user tags):
+  AssertEqual {'author': 'dhleong'},
+      \ lily#ui#filter#Parse('author:@dhleong')
+  AssertEqual {'author': 'dhleong'},
+      \ lily#ui#filter#Parse('author:dhleong')
+
+  " Be a little forgiving:
+  AssertEqual {'author': 'dhleong'},
+      \ lily#ui#filter#Parse('author: dhleong')
+
+Execute(Parse 'mentions'):
+  AssertEqual {'mentioned': 'dhleong'},
+      \ lily#ui#filter#Parse('mentions:dhleong')
+
+Execute(Parse multiple tags):
+  AssertEqual {'author': 'dhleong', 'assignee': 'dhleong'},
+      \ lily#ui#filter#Parse('author:@dhleong assignee:dhleong')
+  AssertEqual {'author': 'dhleong', 'assignee': 'dhleong'},
+      \ lily#ui#filter#Parse('author:dhleong assignee:@dhleong')
+
+Execute(Dumps empty):
+  AssertEqual '(None)', lily#ui#filter#Dumps({})
+
+Execute(Dumps single):
+  AssertEqual 'author:dhleong', 
+      \ lily#ui#filter#Dumps({'author': 'dhleong'})
+  AssertEqual 'mentions:dhleong', 
+      \ lily#ui#filter#Dumps({'mentioned': 'dhleong'})
+
+Execute(Dumps multi):
+  AssertEqual 'author:dhleong assignee:dhleong', 
+      \ lily#ui#filter#Dumps({
+          \ 'author': 'dhleong', 
+          \ 'assignee': 'dhleong'})

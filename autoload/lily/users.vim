@@ -34,4 +34,3 @@ function! lily#users#Get(repo_dir, ...) " {{{
 endfunction " }}}
 
 " vim:ft=vim:fdm=marker
-
