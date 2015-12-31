@@ -140,6 +140,7 @@ function lily#ui#issue#Refresh() " {{{
     let body = substitute(issue.body, "\n", '', 'g')
 
     set noreadonly
+    set modifiable
 
     norm! ggdG
     call append(0, issue.title)
@@ -190,6 +191,7 @@ function lily#ui#issue#Refresh() " {{{
     endfor
 
     set readonly
+    set nomodifiable
     set nomodified
 endfunction " }}}
 
