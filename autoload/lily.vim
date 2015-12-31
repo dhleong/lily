@@ -19,7 +19,7 @@ function! lily#ShouldAllowAutocomplete() " {{{
 endfunction " }}}
 
 function! lily#_opt(opt_name, default) " {{{
-    let fullName = 'lily#' . a:opt_name
+    let fullName = 'lily_' . a:opt_name
     let bufferVal = get(b:, fullName, a:default)
     if bufferVal != a:default
         return bufferVal

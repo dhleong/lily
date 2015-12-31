@@ -10,13 +10,28 @@ function! s:FilterUser(user) " {{{
     endif
 endfunction " }}}
 
+function! s:FilterState(state) " {{{
+    let lower = tolower(a:state[0])
+    if lower == 'a'
+        return 'all'
+    elseif lower == 'c'
+        return 'closed'
+    elseif lower == 'o'
+        return 'open'
+    else
+        return ''
+    endif
+endfunction " }}}
+
 let s:filter_parts = {
     \ 'author': {'key': 'author',
             \ 'filter': function('s:FilterUser')},
     \ 'assignee': {'key': 'assignee',
             \ 'filter': function('s:FilterUser')},
     \ 'mentions': {'key': 'mentioned',
-            \ 'filter': function('s:FilterUser')}
+            \ 'filter': function('s:FilterUser')},
+    \ 'state': {'key': 'state',
+            \ 'filter': function('s:FilterState')}
     \}
 
 let s:key_to_filter = {}
@@ -36,7 +51,8 @@ function! lily#ui#filter#Parse(raw)
 
     for part in parts
         let split = split(part, ':')
-        let parser = get(s:filter_parts, split[0], '')
+        let label = get(split, 0, '_')
+        let parser = get(s:filter_parts, label, {})
         if !empty(parser)
             let key = parser.key
             let val = split[1]

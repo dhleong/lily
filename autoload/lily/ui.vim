@@ -87,16 +87,6 @@ function! s:UpdateIssuesAsync(bufno, repo_path) " {{{
     endif
 endfunction " }}}
 
-function! s:DescribeIssuesOpts(opts) " {{{
-    let desc = []
-
-    if empty(desc)
-        return '(None)'
-    else
-        return join(desc, ' ')
-    endif
-endfunction " }}}
-
 function! lily#ui#DescribeIssue(issue) " {{{
     return ' [#' . a:issue.number . '](' . a:issue.title . ')'
 endfunction " }}}
@@ -153,18 +143,15 @@ function! s:UpdateFilter()
     let rawfilter = line[len(s:filter_prompt):]
     let filter = {}
 
-    if rawfilter =~# "^[ \t]*$"
-        call setline(b:filter_line, s:filter_prompt . '(None)')
-    else
+    if rawfilter !~# "^[ \t]*$"
         let filter = lily#ui#filter#Parse(rawfilter)
-        let dumped = lily#ui#filter#Dumps(filter)
-        call setline(b:filter_line, s:filter_prompt . dumped)
     endif
 
     set nomodifiable
     set readonly
 
-    " TODO: re-request (if different)
+    let b:lily_ui_issues_opts = filter
+    call lily#ui#Show()
 endfunction
 
 function! s:UiSelect() " {{{
@@ -259,7 +246,7 @@ function! lily#ui#Show() " {{{
         return
     endif
 
-    if expand('%') !=# ''
+    if expand('%') !=# '' && expand('%') != '[Lily]'
         tabe
     endif
 
@@ -276,7 +263,7 @@ function! lily#ui#Show() " {{{
 
     call add(c, '## Issues')
     call add(c, '')
-    call add(c, s:filter_prompt . s:DescribeIssuesOpts(opts))
+    call add(c, s:filter_prompt . lily#ui#filter#Dumps(opts))
     let b:filter_line = len(c)
     call add(c, '')
 
@@ -301,6 +288,7 @@ function! lily#ui#Show() " {{{
 
     " add some mappings
     nnoremap <buffer> <silent> <cr> :call <SID>UiSelect()<cr>
+    inoremap <buffer> <silent> <cr> <C-O>:stopinsert<cr>
 
     for m in ['i', 'a', 'A', 'cc', 'dd']
         exe 'nnoremap <buffer> <silent> ' .

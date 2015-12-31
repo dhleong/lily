@@ -1,6 +1,11 @@
 Execute(Parse Empty Filter):
   AssertEqual {}, lily#ui#filter#Parse('')
   AssertEqual {}, lily#ui#filter#Parse('  ')
+  AssertEqual {}, lily#ui#filter#Parse("\t")
+
+Execute(Drop excess whitespace):
+  AssertEqual {'author': 'dhleong'}, 
+      \ lily#ui#filter#Parse('  author:dhleong  ')
 
 Execute(Parse user tags):
   AssertEqual {'author': 'dhleong'},
@@ -16,6 +21,16 @@ Execute(Parse 'mentions'):
   AssertEqual {'mentioned': 'dhleong'},
       \ lily#ui#filter#Parse('mentions:dhleong')
 
+Execute(Parse 'state'):
+  AssertEqual {'state': 'open'},
+      \ lily#ui#filter#Parse('state:o')
+  AssertEqual {'state': 'open'},
+      \ lily#ui#filter#Parse('state:OPEN')
+  AssertEqual {'state': 'closed'},
+      \ lily#ui#filter#Parse('state:C')
+  AssertEqual {'state': 'all'},
+      \ lily#ui#filter#Parse('state:A')
+
 Execute(Parse multiple tags):
   AssertEqual {'author': 'dhleong', 'assignee': 'dhleong'},
       \ lily#ui#filter#Parse('author:@dhleong assignee:dhleong')
@@ -30,6 +45,8 @@ Execute(Dumps single):
       \ lily#ui#filter#Dumps({'author': 'dhleong'})
   AssertEqual 'mentions:dhleong', 
       \ lily#ui#filter#Dumps({'mentioned': 'dhleong'})
+  AssertEqual 'state:open', 
+      \ lily#ui#filter#Dumps({'state': 'open'})
 
 Execute(Dumps multi):
   AssertEqual 'author:dhleong assignee:dhleong', 
