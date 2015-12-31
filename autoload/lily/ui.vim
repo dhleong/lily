@@ -154,11 +154,9 @@ function! s:UpdateFilter()
     let filter = {}
 
     if rawfilter =~# "^[ \t]*$"
-        let b:newFilter = {}
         call setline(b:filter_line, s:filter_prompt . '(None)')
     else
         let filter = lily#ui#filter#Parse(rawfilter)
-        let b:newFilter = filter
         let dumped = lily#ui#filter#Dumps(filter)
         call setline(b:filter_line, s:filter_prompt . dumped)
     endif
