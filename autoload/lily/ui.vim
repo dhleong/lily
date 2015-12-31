@@ -4,6 +4,7 @@
 
 let s:filter_prompt = '> Filter: '
 let s:filter_keys_on_line = ['cc', 'dd']
+let s:default_opts = {'state':'open'}
 
 " Python functions {{{
 " Requiring python is gross, but it's the only way to append to
@@ -39,18 +40,20 @@ function! s:UpdateIssuesAsync_python(bufno, repo_path) " {{{
 
     let bufno = a:bufno
     let repo_path = a:repo_path
+    let opts = lily#_opt('ui_issues_opts', s:default_opts)
 
 python << PYEOF
 class UpdateIssuesCommand(HubrAsyncCommand):
     ISSUE_KEYS = ['title','number','state','body',\
         'assignee', 'user', 'labels']
 
-    def __init__(self, bufno, repo_path):
+    def __init__(self, bufno, repo_path, opts):
         super(UpdateIssuesCommand, self).__init__(\
             'lily#ui#UpdateIssues', bufno, repo_path)
+        self.opts = opts
 
     def run(self):
-        raw = self.hubr().get_issues()
+        raw = self.hubr().get_issues(**opts)
         result = self._filter(raw)
         return (raw.next(), result)
 
@@ -69,8 +72,9 @@ class UpdateIssuesCommand(HubrAsyncCommand):
 # main:
 bufno = int(vim.eval('bufno'))
 path = vim.eval('repo_path')
+opts = vim.eval('opts')
 
-UpdateIssuesCommand(bufno, path).start()
+UpdateIssuesCommand(bufno, path, opts).start()
 PYEOF
 endfunction " }}}
 " }}}
@@ -259,7 +263,7 @@ function! lily#ui#Show() " {{{
     let under = repeat('=', len(title))
     let c = [title, under, '']
 
-    let opts = lily#_opt('ui_issues_opts', {'state':'open'})
+    let opts = lily#_opt('ui_issues_opts', s:default_opts)
 
     call add(c, '## Issues')
     call add(c, '')
