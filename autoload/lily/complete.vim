@@ -13,12 +13,27 @@ let s:expected_prefix = ''
 " Util
 "
 
+function! lily#complete#LineBeforeCursor() " {{{
+    let cursor = col('.')
+    let line = getline('.')
+
+    if cursor < strlen(line)
+        let cursor = cursor - 1
+    endif
+
+    if cursor <= 0
+        return ''
+    endif
+
+    return line[0:cursor]
+endfunction " }}}
+
 function! s:OnBlankLine() " {{{
   return pyeval('not vim.current.line or vim.current.line.isspace()')
 endfunction " }}}
 
 function! s:FindPrefix() " {{{
-    let before_on_line = getline('.')[0:col('.')+1]
+    let before_on_line = lily#complete#LineBeforeCursor()
     return matchstr(before_on_line,'[#@][[:alnum:]-]*$')
 endfunction " }}}
 
@@ -123,7 +138,7 @@ endfunction " }}}
 " The completion function
 "
 
-function! lily#complete#func(findstart, base) " {{{
+function lily#complete#func(findstart, base) " {{{
     let repo_dir = lily#repo_dir()
     if !lily#ShouldAllowAutocomplete() || repo_dir ==# ''
         return a:findstart ? -1 : []
@@ -144,7 +159,13 @@ function! lily#complete#func(findstart, base) " {{{
     endif
 
     if a:findstart
-        return col('.') - 1 - strlen(prefix)
+        " let cursor = col('.')
+        " if cursor <= 1
+        "     return 0
+        " endif
+        let start = col('.') - 1 - strlen(prefix)
+        " let b:last = {'c': col('.'), 'pref': prefix, 's': start}
+        return start
     endif
 
     let raw = copy(prefix)

@@ -2,7 +2,6 @@
 " Interactive UI core
 "
 
-let s:filter_prompt = '> Filter: '
 let s:filter_keys_on_line = ['cc', 'dd']
 let s:default_opts = {'state':'open'}
 
@@ -117,11 +116,11 @@ function! s:StartFilter(mode)
 
     let b:bar = getline('.')
     if a:mode == 'cc'
-        call setline('.', s:filter_prompt)
+        call setline('.', lily#ui#filter#Prompt())
         call cursor(b:filter_line, cursor[2])
         call feedkeys('A', 'n')
     elseif a:mode == 'dd'
-        call setline('.', s:filter_prompt)
+        call setline('.', lily#ui#filter#Prompt())
         call cursor(b:filter_line, cursor[2])
         
         " update immediately
@@ -144,7 +143,7 @@ function! s:UpdateFilter()
     augroup! lily_filter
 
     let line = getline(b:filter_line)
-    let rawfilter = line[len(s:filter_prompt):]
+    let rawfilter = line[len(lily#ui#filter#Prompt()):]
     let filter = {}
 
     if rawfilter !~# "^[ \t]*$"
@@ -216,7 +215,8 @@ endfunction " }}}
 "
 
 function! lily#ui#Error(msg) " {{{
-    echoerr msg
+    let b:_lily_last_error = a:msg
+    echo "lily:" . a:msg
 endfunction " }}}
 
 function! lily#ui#UpdateWindow(lines, ...) " {{{
@@ -258,6 +258,9 @@ function! lily#ui#Show() " {{{
     let b:git_dir = ''
     call fugitive#detect(expand('%:p'))
 
+    " prepare omnicompletion
+    set omnifunc=lily#ui#filter#Complete
+
     " prepare the buffer contents
     let title = "Lily: " . hubr#repo_name()
     let under = repeat('=', len(title))
@@ -267,7 +270,7 @@ function! lily#ui#Show() " {{{
 
     call add(c, '## Issues')
     call add(c, '')
-    call add(c, s:filter_prompt . lily#ui#filter#Dumps(opts))
+    call add(c, lily#ui#filter#Prompt(opts))
     let b:filter_line = len(c)
     call add(c, '')
 

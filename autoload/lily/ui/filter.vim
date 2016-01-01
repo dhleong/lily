@@ -2,6 +2,8 @@
 " Issue search filtering
 "
 
+let s:filter_prompt = '> Filter: '
+
 function! s:FilterUser(user) " {{{
     if a:user[0] == '@'
         return a:user[1:]
@@ -23,6 +25,7 @@ function! s:FilterState(state) " {{{
     endif
 endfunction " }}}
 
+" Filter part definitions {{{
 let s:filter_parts = {
     \ 'author': {'key': 'author',
             \ 'filter': function('s:FilterUser')},
@@ -38,12 +41,63 @@ let s:key_to_filter = {}
 for [filter_name, filter] in items(s:filter_parts)
     let s:key_to_filter[filter.key] = filter_name
 endfor
+" }}}
+
+"
+" Filter part completion
+"
+
+let s:filter_completions = [
+    \ {'word': 'assignee',
+    \  'menu': 'User assigned to the issue'},
+    \ {'word': 'author',
+    \  'menu': 'User who created the issue'},
+    \ {'word': 'mentions',
+    \  'menu': 'User @mentioned in the issue'},
+    \ {'word': 'state',
+    \  'menu': 'Issue state: open/closed/all'},
+\ ]
+
+function! s:FindStart()
+    let before_on_line = lily#complete#LineBeforeCursor()
+
+    return match(before_on_line,'\c[[:alnum:]-]*$')
+endfunction
+
+function! s:CompleteFilterPart(base)
+    let base = a:base
+    let blen = len(base) - 1
+    let b:lastBase = base
+    return filter(copy(s:filter_completions), 'v:val.word[0:blen] == base')
+endfunction
 
 "
 " Public interface
 "
 
-function! lily#ui#filter#Parse(raw)
+function! lily#ui#filter#Complete(findstart, base)
+    if a:findstart
+        let baseResult = lily#complete#func(1, '')
+        if baseResult >= 0
+            " we're using issue/mentions completion
+            let b:_lily_filter_comp = 0
+            return baseResult
+        endif
+
+        let b:_lily_filter_comp = 1
+        return s:FindStart()
+    endif
+
+    if get(b:, '_lily_filter_comp', 0)
+        " filter part completion!
+        return s:CompleteFilterPart(a:base)
+    else
+        " delegate back to issues/mentions
+        return lily#complete#func(0, a:base)
+    endif
+endfunction
+
+function! lily#ui#filter#Parse(raw) " {{{
     let raw = substitute(a:raw, ':[ ]*', ':', 'g')
     let parts = split(raw, ' ')
 
@@ -53,7 +107,7 @@ function! lily#ui#filter#Parse(raw)
         let split = split(part, ':')
         let label = get(split, 0, '_')
         let parser = get(s:filter_parts, label, {})
-        if !empty(parser)
+        if !empty(parser) && len(split) == 2
             let key = parser.key
             let val = split[1]
             if has_key(parser, 'filter')
@@ -67,9 +121,9 @@ function! lily#ui#filter#Parse(raw)
     endfor
 
     return parsed
-endfunction
+endfunction " }}}
 
-function! lily#ui#filter#Dumps(filter)
+function! lily#ui#filter#Dumps(filter) " {{{
     let parts = []
 
     for [k, v] in items(a:filter)
@@ -81,6 +135,14 @@ function! lily#ui#filter#Dumps(filter)
         return '(None)'
     else
         return join(parts, ' ')
+    endif
+endfunction " }}}
+
+function! lily#ui#filter#Prompt(...)
+    if a:0
+        return s:filter_prompt . lily#ui#filter#Dumps(a:1)
+    else
+        return s:filter_prompt
     endif
 endfunction
 

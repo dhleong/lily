@@ -11,7 +11,7 @@ function! lily#repo_dir() " {{{
 endfunction " }}}
 
 function! lily#ShouldAllowAutocomplete() " {{{
-    if &ft == 'gitcommit'
+    if &ft == 'gitcommit' || &ft == 'lily'
         return 1
     endif
 
