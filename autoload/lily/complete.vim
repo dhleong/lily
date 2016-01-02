@@ -14,26 +14,39 @@ let s:expected_prefix = ''
 "
 
 function! lily#complete#LineBeforeCursor() " {{{
-    let cursor = col('.')
     let line = getline('.')
+    let mod = get(b:, '_lily_cursor_mod', 0)
+    let cursor = col('.') + mod
 
-    if cursor < strlen(line)
-        let cursor = cursor - 1
+    if cursor == col('$')
+        return line
     endif
 
+    " col is 1-indexed; line is 0-indexed
+    let cursor = cursor - 1
     if cursor <= 0
         return ''
     endif
 
-    return line[0:cursor]
+    " -1 for BEFORE the cursor (in insert mode)
+    return line[0:cursor - 1]
 endfunction " }}}
 
 function! s:OnBlankLine() " {{{
   return pyeval('not vim.current.line or vim.current.line.isspace()')
 endfunction " }}}
 
-function! s:FindPrefix() " {{{
+function! s:FindPrefix(...) " {{{
     let before_on_line = lily#complete#LineBeforeCursor()
+    if a:0
+        " NB: Sometimes the most-recent character
+        "  is lost when we trigger this from within
+        "  filter completion; that character is exactly
+        "  a suffix on this line, so we'll be given it
+        let before_on_line = before_on_line . a:1
+    endif
+
+    let b:before_on_line = before_on_line
     return matchstr(before_on_line,'[#@][[:alnum:]-]*$')
 endfunction " }}}
 
@@ -138,7 +151,7 @@ endfunction " }}}
 " The completion function
 "
 
-function lily#complete#func(findstart, base) " {{{
+function lily#complete#func(findstart, base, ...) " {{{
     let repo_dir = lily#repo_dir()
     if !lily#ShouldAllowAutocomplete() || repo_dir ==# ''
         return a:findstart ? -1 : []
@@ -148,7 +161,12 @@ function lily#complete#func(findstart, base) " {{{
     "  some weird double-calls, where our input so far
     "  is stripped. We save the last-seen prefix and use
     "  that in such cases
-    let prefix = s:FindPrefix()
+    " NB: The optional arg is provided when delegated from
+    "  the filter completion to support some weird behavior
+    "  observed in vim where the "line before cursor" isn't
+    "  the same between the initial findstart call and the
+    "  second call to get matches
+    let prefix = a:0 ? s:FindPrefix(a:1) : s:FindPrefix()
     if prefix ==# ''
         let prefix = s:expected_prefix
     endif
@@ -159,13 +177,11 @@ function lily#complete#func(findstart, base) " {{{
     endif
 
     if a:findstart
-        " let cursor = col('.')
-        " if cursor <= 1
-        "     return 0
-        " endif
-        let start = col('.') - 1 - strlen(prefix)
-        " let b:last = {'c': col('.'), 'pref': prefix, 's': start}
-        return start
+        let cursor = col('.')
+        if cursor <= 2
+            return 0
+        endif
+        return col('.') - 1 - strlen(prefix)
     endif
 
     let raw = copy(prefix)

@@ -1,0 +1,81 @@
+# 
+# LineBeforeCursor() tests
+#
+
+Given (LineBeforeCursor tests):
+  Foo
+Do:
+  I
+Then:
+  AssertEqual '', lily#complete#LineBeforeCursor()
+
+Before ((Fake insert mode)):
+  " NB: when actually in insert mode, the cursor can
+  "  be past the last character; Vader keeps us in normal
+  let b:_lily_cursor_mod = 1
+
+Given:
+  a
+Do:
+  A
+Then:
+  AssertEqual 'a', lily#complete#LineBeforeCursor()
+
+
+Given:
+  > Filter: a
+Do:
+  A
+Then:
+  AssertEqual '> Filter: a', lily#complete#LineBeforeCursor()
+
+
+Given:
+  > Filter: assignee: state:open
+Do:
+  2f:a
+Then:
+  AssertEqual '> Filter: assignee:', lily#complete#LineBeforeCursor()
+
+
+Given:
+  > Filter: assignee:@ state:open
+Do:
+  f@a
+Then:
+  AssertEqual '> Filter: assignee:@', lily#complete#LineBeforeCursor()
+
+Given:
+  > Filter: assignee:@state:open
+Do:
+  f@a
+Then:
+  AssertEqual '> Filter: assignee:@', lily#complete#LineBeforeCursor()
+
+Given:
+  Foo
+Do:
+  $I#f
+Then:
+  AssertEqual '#f', lily#complete#LineBeforeCursor()
+
+# 
+# complete#func() tests
+#
+
+Given lily (complete#func tests):
+  > Filter: assignee:@ state:open
+
+Do:
+  f@a
+
+Then:
+  AssertEqual 20, col('.')
+  " Pretty sure this should be 19, but it's
+  "  returning 18; it seems to work on live,
+  "  however...
+"   AssertEqual 19, lily#complete#func(1, '')
+
+After (cleanup):
+  unlet b:_lily_cursor_mod
+

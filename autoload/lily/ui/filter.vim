@@ -93,7 +93,8 @@ function! lily#ui#filter#Complete(findstart, base)
         return s:CompleteFilterPart(a:base)
     else
         " delegate back to issues/mentions
-        return lily#complete#func(0, a:base)
+        " (see the NBs in there for explanation)
+        return lily#complete#func(0, a:base, a:base)
     endif
 endfunction
 

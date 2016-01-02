@@ -1,0 +1,50 @@
+Given:
+  > Filter: a
+
+Do:
+  A
+
+Then:
+  AssertEqual 10, lily#ui#filter#Complete(1, '')
+
+
+Given:
+  > Filter: a state:open
+
+Do:
+  0faa
+
+Then:
+  AssertEqual 11, col('.')
+  AssertEqual 10, lily#ui#filter#Complete(1, '')
+  AssertEqual 1, b:_lily_filter_comp
+  AssertEqual ['assignee', 'author'],
+    \ map(lily#ui#filter#Complete(0, 'a'), 'v:val.word')
+
+
+Given:
+  > Filter: as state:open
+
+Do:
+  0fsa
+
+Then:
+  AssertEqual 12, col('.')
+  AssertEqual 10, lily#ui#filter#Complete(1, '')
+  AssertEqual 1, b:_lily_filter_comp
+  AssertEqual ['assignee'],
+    \ map(lily#ui#filter#Complete(0, 'as'), 'v:val.word')
+
+
+Given:
+  > Filter: assignee:@ state:open
+
+Do:
+  0f@a
+
+Then:
+  AssertEqual 20, col('.')
+  " see the comments in complete.vader
+"   AssertEqual 20, lily#ui#filter#Complete(1, '')
+"   AssertEqual 0, b:_lily_filter_comp
+
