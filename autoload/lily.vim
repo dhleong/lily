@@ -43,12 +43,7 @@ function! lily#Enable() " {{{
     endif
 
     if lily#ShouldAllowAutocomplete()
-        if lily#_opt('complete_issues', 1)
-            call lily#complete#EnableIssuesCompletion()
-        endif
-        if lily#_opt('complete_mentions', 1)
-            call lily#complete#EnableMentionsCompletion()
-        endif
+        call lily#complete#Enable()
     endif
 
     if lily#_opt('prefetch_issues', 1)

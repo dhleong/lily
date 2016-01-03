@@ -130,6 +130,10 @@ function! s:StartFilter(mode)
         call feedkeys(a:mode, 'n')
     endif
 
+    " prepare omnicompletion
+    call lily#complete#Enable()
+    set omnifunc=lily#ui#filter#Complete
+
     augroup lily_filter
         autocmd!
         autocmd! InsertLeave <buffer> call <SID>UpdateFilter()
@@ -257,9 +261,6 @@ function! lily#ui#Show() " {{{
     " make fugitive happy
     let b:git_dir = ''
     call fugitive#detect(expand('%:p'))
-
-    " prepare omnicompletion
-    set omnifunc=lily#ui#filter#Complete
 
     " prepare the buffer contents
     let title = "Lily: " . hubr#repo_name()

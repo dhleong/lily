@@ -264,4 +264,18 @@ function! lily#complete#EnableMentionsCompletion() " {{{
 
 endfunction " }}}
 
+function! lily#complete#Enable()
+    if get(b:, '_lily_completion', 0)
+        " already enabled
+        return
+    endif
+
+    if lily#_opt('complete_issues', 1)
+        call lily#complete#EnableIssuesCompletion()
+    endif
+    if lily#_opt('complete_mentions', 1)
+        call lily#complete#EnableMentionsCompletion()
+    endif
+endfunction
+
 " vim:ft=vim:fdm=marker
