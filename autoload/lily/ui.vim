@@ -3,6 +3,7 @@
 "
 
 let s:filter_keys_on_line = ['cc', 'dd']
+let s:motion_mappings = ['c', 'd']
 let s:default_opts = {'state':'open'}
 
 " Python functions {{{
@@ -102,32 +103,50 @@ function! s:StartFilter(mode)
 
     let cursor = getpos('.')
 
-    if index(s:filter_keys_on_line, a:mode) >= 0
-            \ && cursor[1] != b:filter_line
+    " if index(s:filter_keys_on_line, a:mode) >= 0
+    if cursor[1] != b:filter_line
         " just let them be
-        call feedkeys(a:mode, 'n')
-        return
+        set nomodifiable
+        set readonly
+        return a:mode
     endif
-
-    call cursor(b:filter_line, cursor[2])
 
     set modifiable
     set noreadonly
 
-    let b:bar = getline('.')
-    if a:mode == 'cc'
+    if a:mode ==# 'cc'
         call setline('.', lily#ui#filter#Prompt())
         call cursor(b:filter_line, cursor[2])
         call feedkeys('A', 'n')
-    elseif a:mode == 'dd'
+    elseif a:mode ==# 'dd'
         call setline('.', lily#ui#filter#Prompt())
         call cursor(b:filter_line, cursor[2])
         
         " update immediately
         call s:UpdateFilter()
         return
-    else
-        call feedkeys(a:mode, 'n')
+    elseif a:mode ==# 'D' || a:mode ==# 'C'
+
+        let cutStart = max([cursor[2] - 2, 
+                    \ strlen(lily#ui#filter#Prompt()) - 1])
+        let line = getline('.')[0:cutStart]
+        call setline('.', line)
+        call cursor(b:filter_line, cutStart)
+
+        if a:mode == 'D'
+            " update immediately
+            call s:UpdateFilter()
+            return
+        else
+            " go to insert mode
+            call feedkeys('A', 'n')
+        endif
+    elseif index(s:motion_mappings, a:mode) == -1
+
+        let prompt = lily#ui#filter#Prompt()
+        let cursorPos = max([cursor[2], strlen(prompt)])
+        call cursor(b:filter_line, cursorPos)
+        call feedkeys(a:mode, 'n') 
     endif
 
     " prepare omnicompletion
@@ -138,6 +157,8 @@ function! s:StartFilter(mode)
         autocmd!
         autocmd! InsertLeave <buffer> call <SID>UpdateFilter()
     augroup END
+
+    return a:mode
 endfunction
 
 function! s:UpdateFilter()
@@ -298,7 +319,13 @@ function! lily#ui#Show() " {{{
     nnoremap <buffer> <silent> <cr> :call <SID>UiSelect()<cr>
     inoremap <buffer> <silent> <cr> <C-O>:stopinsert<cr>
 
-    for m in ['i', 'a', 'A', 'cc', 'dd']
+    for m in s:motion_mappings
+        exe 'nnoremap <buffer> <silent> <expr> ' .
+                \ m . ' <SID>StartFilter("' . 
+                \ m . '")'
+    endfor
+
+    for m in ['i', 'a', 'A', 'cc', 'dd', 'C', 'D']
         exe 'nnoremap <buffer> <silent> ' .
                 \ m . ' :call <SID>StartFilter("' . 
                 \ m . '")<cr>'
