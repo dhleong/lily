@@ -139,8 +139,8 @@ function lily#ui#issue#Refresh() " {{{
 
     let body = substitute(issue.body, "\n", '', 'g')
 
-    set noreadonly
-    set modifiable
+    setlocal noreadonly
+    setlocal modifiable
 
     norm! ggdG
     call append(0, issue.title)
@@ -190,9 +190,9 @@ function lily#ui#issue#Refresh() " {{{
                 \ ' guifg=#' . fgColor
     endfor
 
-    set readonly
-    set nomodifiable
-    set nomodified
+    setlocal readonly
+    setlocal nomodifiable
+    setlocal nomodified
 endfunction " }}}
 
 function lily#ui#issue#Show(issue) " {{{

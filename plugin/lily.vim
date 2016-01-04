@@ -12,7 +12,7 @@ function! my_lily.func(candidates)
     let pathDir = a:candidates.word . '/'
 
     " set path, etc.
-    exe 'set path=' . pathDir . '**'
+    exe 'setlocal path=' . pathDir . '**'
     exe 'lcd `=pathDir`' 
     call lily#ui#Show()
 endfunction

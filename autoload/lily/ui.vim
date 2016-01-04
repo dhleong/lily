@@ -106,13 +106,13 @@ function! s:StartFilter(mode)
     " if index(s:filter_keys_on_line, a:mode) >= 0
     if cursor[1] != b:filter_line
         " just let them be
-        set nomodifiable
-        set readonly
+        setlocal nomodifiable
+        setlocal readonly
         return a:mode
     endif
 
-    set modifiable
-    set noreadonly
+    setlocal modifiable
+    setlocal noreadonly
 
     if a:mode ==# 'cc'
         call setline('.', lily#ui#filter#Prompt())
@@ -151,7 +151,7 @@ function! s:StartFilter(mode)
 
     " prepare omnicompletion
     call lily#complete#Enable()
-    set omnifunc=lily#ui#filter#Complete
+    setlocal omnifunc=lily#ui#filter#Complete
 
     augroup lily_filter
         autocmd!
@@ -175,8 +175,8 @@ function! s:UpdateFilter()
         let filter = lily#ui#filter#Parse(rawfilter)
     endif
 
-    set nomodifiable
-    set readonly
+    setlocal nomodifiable
+    setlocal readonly
 
     let b:lily_ui_issues_opts = filter
     call lily#ui#Show()
