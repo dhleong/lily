@@ -196,33 +196,7 @@ function lily#ui#issue#Refresh() " {{{
 endfunction " }}}
 
 function lily#ui#issue#Show(issue) " {{{
-    let orient = lily#_opt('issue_orient', 'vertical')
-    if orient == 'vertical'
-        let method = 'belowright'
-        let mod = ' vertical '
-        let dimen = 64
-    else
-        let method = 'botright'
-        let mod = ' '
-        let dimen = 10
-    endif
-
-    let name = '[' . a:issue.title . ']'
-    let method = lily#_opt('issue_split', method)
-    let dimen = lily#_opt('issue_size', dimen)
-    let cmd = method . mod . ' ' . dimen .
-                \ ' sview ' . name
-    silent! noautocmd exec "keepalt " . cmd
-
-    " set some flags
-    setlocal noswapfile
-    setlocal nobuflisted
-    setlocal buftype=nofile
-    setlocal bufhidden=wipe
-    setlocal filetype=lily
-
-    " set some mappings
-    nnoremap <buffer> <silent> q :q<cr>
+    call lily#ui#SplitWindow('issue', a:issue.title)
 
     " set some content
     let b:issue = a:issue

@@ -4,12 +4,21 @@
 
 let s:filter_prompt = '> Filter: '
 
+function! s:CompleteMilestone(base) " {{{
+    " TODO call hubr
+    return []
+endfunction " }}}
+
 function! s:FilterUser(user) " {{{
     if a:user[0] == '@'
         return a:user[1:]
     else
         return a:user
     endif
+endfunction " }}}
+
+function! s:FilterMilestone(milestone) " {{{
+    return a:milestone
 endfunction " }}}
 
 function! s:FilterState(state) " {{{
@@ -31,6 +40,9 @@ let s:filter_parts = {
             \ 'filter': function('s:FilterUser')},
     \ 'assignee': {'key': 'assignee',
             \ 'filter': function('s:FilterUser')},
+    \ 'milestone': {'key': 'milestone',
+            \ 'filter': function('s:FilterMilestone'),
+            \ 'complete': function('s:CompleteMilestone')},
     \ 'mentions': {'key': 'mentioned',
             \ 'filter': function('s:FilterUser')},
     \ 'state': {'key': 'state',
@@ -52,6 +64,8 @@ let s:filter_completions = [
     \  'menu': 'User assigned to the issue'},
     \ {'word': 'author',
     \  'menu': 'User who created the issue'},
+    \ {'word': 'milestone',
+    \  'menu': 'Milestone name the issue is attached to'},
     \ {'word': 'mentions',
     \  'menu': 'User @mentioned in the issue'},
     \ {'word': 'state',
@@ -61,11 +75,26 @@ let s:filter_completions = [
 function! s:FindStart()
     let before_on_line = lily#complete#LineBeforeCursor()
 
-    return match(before_on_line,'\c[[:alnum:]-]*$')
+    return match(before_on_line, '\c\([[:alnum:]-]*:\)*[[:alnum:]-]*$')
 endfunction
 
 function! s:CompleteFilterPart(base)
     let base = a:base
+    let sepPos = stridx(base, ":")
+    if sepPos != -1
+        " completing the value for a filter part
+        let partName = strpart(base, 0, sepPos)
+        let arg = strpart(base, sepPos + 1)
+        let b:lastPartName = partName
+        let b:lastArg = arg
+        let filter = get(s:filter_parts, partName, {})
+        if has_key(filter, "complete")
+            return map(copy(filter.complete(arg)), 'partName . ":" . v:val')
+        endif
+        return []
+    endif
+
+    " completing a filter part name
     let blen = len(base) - 1
     let b:lastBase = base
     return filter(copy(s:filter_completions), 'v:val.word[0:blen] == base')

@@ -244,6 +244,36 @@ function! lily#ui#Error(msg) " {{{
     echo "lily:" . a:msg
 endfunction " }}}
 
+function! lily#ui#SplitWindow(type, title) " {{{
+    let orient = lily#_opt(a:type . '_orient', 'vertical')
+    if orient == 'vertical'
+        let method = 'belowright'
+        let mod = ' vertical '
+        let dimen = 64
+    else
+        let method = 'botright'
+        let mod = ' '
+        let dimen = 10
+    endif
+
+    let name = '[' . a:title . ']'
+    let method = lily#_opt(a:type . '_split', method)
+    let dimen = lily#_opt(a:type . '_size', dimen)
+    let cmd = method . mod . ' ' . dimen .
+                \ ' sview ' . name
+    silent! noautocmd exec "keepalt " . cmd
+
+    " set some flags
+    setlocal noswapfile
+    setlocal nobuflisted
+    setlocal buftype=nofile
+    setlocal bufhidden=wipe
+    setlocal filetype=lily
+
+    " set some mappings
+    nnoremap <buffer> <silent> q :q<cr>
+endfunction " }}}
+
 function! lily#ui#UpdateWindow(lines, ...) " {{{
 
     let opts = a:0 ? a:1 : {}
@@ -315,6 +345,11 @@ function! lily#ui#Show() " {{{
 
     call lily#ui#UpdateWindow(c)
 
+    " TODO this is not ready
+    " " add some commands
+    " command! -nargs=0 CreateIssue
+    "     \ call lily#ui#issue#create#Show()
+
     " add some mappings
     nnoremap <buffer> <silent> <cr> :call <SID>UiSelect()<cr>
     inoremap <buffer> <silent> <cr> <C-O>:stopinsert<cr>
@@ -331,19 +366,19 @@ function! lily#ui#Show() " {{{
                 \ m . '")<cr>'
     endfor
 
-    augroup lily_ui
-        autocmd!
-
-        " temporary hacks: for whatever reason, :bdelete
-        "  in the preview window from :Gstatus, for example,
-        "  is broken from within Lily: the window is cleared,
-        "  but not closed. Hopefully we can figure out what's
-        "  causing that, but this is a decent workaround for now
-        autocmd BufDelete * 
-                \ if &previewwindow |
-                \   call feedkeys("\<C-W>z", 'n') | 
-                \ endif
-    augroup END
+    " augroup lily_ui
+    "     autocmd!
+    "
+    "     " temporary hacks: for whatever reason, :bdelete
+    "     "  in the preview window from :Gstatus, for example,
+    "     "  is broken from within Lily: the window is cleared,
+    "     "  but not closed. Hopefully we can figure out what's
+    "     "  causing that, but this is a decent workaround for now
+    "     autocmd BufDelete * 
+    "             \ if &previewwindow |
+    "             \   call feedkeys("\<C-W>z", 'n') | 
+    "             \ endif
+    " augroup END
 
 endfunction " }}}
 
