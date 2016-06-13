@@ -161,6 +161,10 @@ function! s:StartFilter(mode)
         call lily#complete#Enable()
         setlocal omnifunc=lily#ui#filter#Complete
 
+        " this should be fine: let : start completion for parts
+        inoremap <buffer> : :<c-x><c-o><c-p>
+        inoremap <buffer> <space> <space><c-x><c-o><c-p>
+
         augroup lily_filter
             autocmd!
             autocmd! InsertLeave <buffer> call <SID>UpdateFilter()

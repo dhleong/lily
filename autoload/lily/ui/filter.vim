@@ -103,9 +103,14 @@ function! s:CompleteFilterPart(base)
     endif
 
     " completing a filter part name
-    let blen = len(base) - 1
-    let b:lastBase = base
-    return filter(copy(s:filter_completions), 'v:val.word[0:blen] == base')
+    if len(base) == 0
+        " all of them
+        return copy(s:filter_completions)
+    else
+        let blen = len(base) - 1
+        let b:lastBase = base
+        return filter(copy(s:filter_completions), 'v:val.word[0:blen] == base')
+    endif
 endfunction
 
 "
@@ -127,6 +132,7 @@ function! lily#ui#filter#Complete(findstart, base)
     endif
 
     if get(b:, '_lily_filter_comp', 0)
+
         " filter part completion!
         return s:CompleteFilterPart(a:base)
     else
