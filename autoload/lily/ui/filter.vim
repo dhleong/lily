@@ -4,6 +4,11 @@
 
 let s:filter_prompt = '> Filter: '
 
+function! s:CompleteState(base) " {{{
+    let in = a:base
+    return filter(['open', 'closed', 'all'], 'stridx(v:val, tolower(in)) == 0')
+endfunction " }}}
+
 function! s:CompleteMilestone(base) " {{{
     " TODO call hubr
     return []
@@ -41,11 +46,12 @@ let s:filter_parts = {
     \ 'assignee': {'key': 'assignee',
             \ 'filter': function('s:FilterUser')},
     \ 'milestone': {'key': 'milestone',
-            \ 'filter': function('s:FilterMilestone'),
-            \ 'complete': function('s:CompleteMilestone')},
+            \ 'complete': function('s:CompleteMilestone'),
+            \ 'filter': function('s:FilterMilestone')},
     \ 'mentions': {'key': 'mentioned',
             \ 'filter': function('s:FilterUser')},
     \ 'state': {'key': 'state',
+            \ 'complete': function('s:CompleteState'),
             \ 'filter': function('s:FilterState')}
     \}
 
@@ -75,7 +81,9 @@ let s:filter_completions = [
 function! s:FindStart()
     let before_on_line = lily#complete#LineBeforeCursor()
 
-    return match(before_on_line, '\c\([[:alnum:]-]*:\)*[[:alnum:]-]*$')
+    let pos = match(before_on_line, '\c\([[:alnum:]-]*:\)*[[:alnum:]-]*$')
+    let b:lastStartPos = pos
+    return pos
 endfunction
 
 function! s:CompleteFilterPart(base)
@@ -105,6 +113,7 @@ endfunction
 "
 
 function! lily#ui#filter#Complete(findstart, base)
+    let b:complete = [a:findstart, a:base]
     if a:findstart
         let baseResult = lily#complete#func(1, '')
         if baseResult >= 0

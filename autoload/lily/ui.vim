@@ -5,7 +5,7 @@
 let s:filter_keys_on_line = ['cc', 'dd']
 let s:motion_mappings = ['c', 'd']
 let s:default_opts = {'state':'open'}
-let s:end_in_insert = ['c']
+let s:end_in_normal = ['d']
 
 " Python functions {{{
 " Requiring python is gross, but it's the only way to append to
@@ -150,7 +150,7 @@ function! s:StartFilter(mode)
         call feedkeys(a:mode, 'n') 
     endif
 
-    if index(s:end_in_insert, a:mode) == -1
+    if index(s:end_in_normal, a:mode) != -1
         " not ending in insert mode; update immediately-ish
         augroup lily_filter
             autocmd!
