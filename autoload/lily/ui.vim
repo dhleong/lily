@@ -5,7 +5,7 @@
 let s:filter_keys_on_line = ['cc', 'dd']
 let s:motion_mappings = ['c', 'd']
 let s:default_opts = {'state':'open'}
-let s:end_in_normal = ['d']
+let s:end_in_normal = ['d', 'r']
 
 " Python functions {{{
 " Requiring python is gross, but it's the only way to append to
@@ -106,6 +106,11 @@ function! s:StartFilter(mode)
 
     " if index(s:filter_keys_on_line, a:mode) >= 0
     if cursor[1] != b:filter_line
+        if a:mode == 'R'
+            " also, this is a "refresh" shortcut
+            call s:UpdateFilter()
+        endif
+
         " just let them be
         setlocal nomodifiable
         setlocal readonly
@@ -145,7 +150,7 @@ function! s:StartFilter(mode)
     elseif index(s:motion_mappings, a:mode) == -1
 
         let prompt = lily#ui#filter#Prompt()
-        let cursorPos = max([cursor[2], strlen(prompt)])
+        let cursorPos = max([cursor[2], strlen(prompt) + 1])
         call cursor(b:filter_line, cursorPos)
         call feedkeys(a:mode, 'n') 
     endif
@@ -373,7 +378,7 @@ function! lily#ui#Show() " {{{
                 \ m . '")'
     endfor
 
-    for m in ['i', 'a', 'A', 'cc', 'dd', 'C', 'D']
+    for m in ['i', 'a', 'A', 'cc', 'dd', 'C', 'D', 'r', 'R']
         exe 'nnoremap <buffer> <silent> ' .
                 \ m . ' :call <SID>StartFilter("' . 
                 \ m . '")<cr>'
