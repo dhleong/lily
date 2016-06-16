@@ -10,8 +10,9 @@ function! s:CompleteState(base) " {{{
 endfunction " }}}
 
 function! s:CompleteMilestone(base) " {{{
-    " TODO call hubr
-    return []
+    " TODO handle spaces in milestone names
+    let milestones = lily#milestones#Get()
+    return map(copy(milestones), "{'word': v:val.title, 'menu': v:val.description}")
 endfunction " }}}
 
 function! s:FilterUser(user) " {{{
@@ -23,6 +24,7 @@ function! s:FilterUser(user) " {{{
 endfunction " }}}
 
 function! s:FilterMilestone(milestone) " {{{
+    " TODO handle spaces in milestone names
     return a:milestone
 endfunction " }}}
 
@@ -86,7 +88,18 @@ function! s:FindStart()
     return pos
 endfunction
 
-function! s:CompleteFilterPart(base)
+function! s:FilterOn(completions, base) " {{{
+    let base = a:base
+    if len(base) == 0
+        " all of them
+        return copy(a:completions)
+    else
+        let blen = len(base) - 1
+        return filter(copy(a:completions), 'v:val.word[0:blen] == base')
+    endif
+endfunction " }}}
+
+function! s:CompleteFilterPart(base) " {{{
     let base = a:base
     let sepPos = stridx(base, ":")
     if sepPos != -1
@@ -97,21 +110,15 @@ function! s:CompleteFilterPart(base)
         let b:lastArg = arg
         let filter = get(s:filter_parts, partName, {})
         if has_key(filter, "complete")
-            return map(copy(filter.complete(arg)), 'partName . ":" . v:val')
+            let filtered = s:FilterOn(filter.complete(arg), arg)
+            return map(filtered, '{"word": partName . ":" . v:val.word, "menu": v:val.menu}')
         endif
         return []
     endif
 
     " completing a filter part name
-    if len(base) == 0
-        " all of them
-        return copy(s:filter_completions)
-    else
-        let blen = len(base) - 1
-        let b:lastBase = base
-        return filter(copy(s:filter_completions), 'v:val.word[0:blen] == base')
-    endif
-endfunction
+    return s:FilterOn(s:filter_completions, base)
+endfunction " }}}
 
 "
 " Public interface
