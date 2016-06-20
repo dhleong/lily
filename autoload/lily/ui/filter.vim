@@ -5,8 +5,15 @@
 let s:filter_prompt = '> Filter: '
 
 function! s:CompleteState(base) " {{{
-    let in = a:base
-    return filter(['open', 'closed', 'all'], 'stridx(v:val, tolower(in)) == 0')
+    " NB: just let the FilterOn stuff handle filtering
+    return [
+        \ {'word': 'open',
+        \  'menu': 'Open issues'},
+        \ {'word': 'closed',
+        \  'menu': 'Closed issues'},
+        \ {'word': 'all',
+        \  'menu': 'Closed AND Open issues'},
+        \ ]
 endfunction " }}}
 
 function! s:CompleteMilestone(base) " {{{
