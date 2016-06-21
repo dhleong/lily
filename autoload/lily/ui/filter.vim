@@ -19,7 +19,8 @@ endfunction " }}}
 function! s:CompleteMilestone(base) " {{{
     " TODO handle spaces in milestone names
     let milestones = lily#milestones#Get()
-    return map(copy(milestones), "{'word': v:val.title, 'menu': v:val.description}")
+    return map(copy(milestones), "{'word': v:val.title, 'menu': "
+        \ . "type(v:val.description) == type(0) ? '' : v:val.description}")
 endfunction " }}}
 
 function! s:FilterUser(user) " {{{
