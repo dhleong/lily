@@ -9,7 +9,7 @@ let my_lily = {
 \ 'is_selectable' : 0,
 \ }
 function! my_lily.func(candidates)
-    let pathDir = a:candidates.word . '/'
+    let pathDir = a:candidates.action__path . '/'
 
     " set path, etc.
     exe 'setlocal path=' . pathDir . '**'
