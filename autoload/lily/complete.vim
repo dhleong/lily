@@ -5,8 +5,6 @@
 
 let s:old_cursor_position = []
 let s:cursor_moved = 0
-let s:moved_vertically_in_insert_mode = 0
-let s:previous_num_chars_on_current_line = strlen( getline('.') )
 let s:expected_prefix = ''
 
 "
@@ -15,8 +13,7 @@ let s:expected_prefix = ''
 
 function! lily#complete#LineBeforeCursor() " {{{
     let line = getline('.')
-    let mod = get(b:, '_lily_cursor_mod', 0)
-    let cursor = col('.') + mod
+    let cursor = col('.') 
 
     if cursor == col('$')
         return line
@@ -46,8 +43,7 @@ function! s:FindPrefix(...) " {{{
         let before_on_line = before_on_line . a:1
     endif
 
-    let b:before_on_line = before_on_line
-    return matchstr(before_on_line,'[#@][[:alnum:]-]*$')
+    return matchstr(before_on_line, '[#@][[:alnum:]-]*$')
 endfunction " }}}
 
 "
@@ -122,14 +118,10 @@ endfunction " }}}
 function! s:UpdateCursorMoved() " {{{
   let current_position = getpos('.')
   let s:cursor_moved = current_position != s:old_cursor_position
-
-  let s:moved_vertically_in_insert_mode = s:old_cursor_position != [] &&
-        \ current_position[ 1 ] != s:old_cursor_position[ 1 ]
-
   let s:old_cursor_position = current_position
 endfunction " }}}
 
-function! s:OnCursorMovedInsertMode() " {{{
+function! s:OnTextChangedInsertMode() " {{{
     let s:expected_prefix = s:FindPrefix()
 
     call s:UpdateCursorMoved()
@@ -141,10 +133,8 @@ function! s:OnCursorMovedNormalMode() " {{{
 endfunction " }}}
 
 function! s:OnInsertEnter() " {{{
-    let s:previous_num_chars_on_current_line = strlen( getline('.') )
-
     let s:old_cursor_position = []
-    let s:expected_prefix = ''
+    let s:expected_prefix = s:FindPrefix()
 endfunction " }}}
 
 "
@@ -229,7 +219,7 @@ endfunction " }}}
 function! s:EnableCursorMovedAutocommands() " {{{
     augroup lilycursormove
         autocmd!
-        autocmd CursorMovedI <buffer> call s:OnCursorMovedInsertMode()
+        autocmd TextChangedI <buffer> call s:OnTextChangedInsertMode()
         autocmd CursorMoved <buffer> call s:OnCursorMovedNormalMode()
     augroup END
 endfunction " }}}
