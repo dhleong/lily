@@ -221,7 +221,7 @@ function lily#complete#func(findstart, base, ...) " {{{
         return -3 " stop completion silently
     endtry
 
-    if items == 0
+    if type(items) != type([])
         " no completions; possibly not a github repo
         return -3
     endif
