@@ -29,8 +29,15 @@ function! lily#complete#LineBeforeCursor() " {{{
     return line[0:cursor - 1]
 endfunction " }}}
 
+function! s:HasYCM()
+    " NOTE: YCM doesn't play very nicely with us anymore for some reason
+    return exists('#youcompleteme')
+endfunction
+
 function! s:OnBlankLine() " {{{
-  return pyeval('not vim.current.line or vim.current.line.isspace()')
+    " return pyeval('not vim.current.line or vim.current.line.isspace()')
+    let line = getline('.')
+    return len(line) == 0 || match(line, '^[ ]*$') == 0
 endfunction " }}}
 
 function! s:FindPrefix(...) " {{{
@@ -51,6 +58,12 @@ endfunction " }}}
 "
 
 function! s:FinishComplete() " {{{
+    let prefix = s:FindPrefix()
+    if prefix !=# ''
+        " not done yet!
+        return
+    endif
+
     augroup lily_end
         autocmd!
     augroup END
@@ -60,10 +73,12 @@ function! s:FinishComplete() " {{{
         let opt = b:_lily_completeopt
 
         " restore
-        " FIXME: This is actually ignored by
-        "  vim right now....
         exe 'setlocal completeopt=' . opt
     endif
+
+    " restore YCM
+    " call s:SetYCMEnabled(1)
+
 endfunction " }}}
 
 function! s:TriggerComplete(...) " {{{
@@ -78,19 +93,21 @@ function! s:TriggerComplete(...) " {{{
 
     " we need menuone for issues completion to
     "  make sense; longest is not necessary for lily.
-    "  These are inspired by YCM, and needed here
-    "  in case YCM is not also installed
     setlocal completeopt-=longest
-    setlocal completeopt-=menu
+    setlocal completeopt+=menu
     setlocal completeopt+=menuone
+    setlocal completeopt+=noselect
 
     if a:0
+        " call s:SetYCMEnabled(0)
         return a:1 . "\<C-X>\<C-O>\<C-P>"
     elseif s:OnBlankLine()
+        call s:FinishComplete()
         return
     else
         let prefix = s:FindPrefix()
         if prefix ==# ''
+            call s:FinishComplete()
             return
         elseif prefix !~# '^[#@]'
             " We only need to manually trigger
@@ -106,7 +123,17 @@ function! s:TriggerComplete(...) " {{{
 
         let s:expected_prefix = prefix
 
-        call feedkeys("\<C-X>\<C-O>\<C-P>", 'n')
+        " call s:SetYCMEnabled(0)
+        if len(prefix) == 1
+            " with just the prefix, we simply use <c-p>
+            " to clear to the prefix
+            call feedkeys("\<C-X>\<C-O>\<C-P>", 'n')
+        else
+            " with more than just the prefix typed, we use
+            " <c-n><c-p> to get back to what we originally
+            " typed
+            call feedkeys("\<C-X>\<C-O>\<C-N>\<C-P>", 'n')
+        endif
     endif
 
 endfunction " }}}
@@ -147,59 +174,57 @@ function lily#complete#func(findstart, base, ...) " {{{
         return a:findstart ? -1 : []
     endif
 
-    " HAX: Interplay with YouCompleteMe (I think) causes
-    "  some weird double-calls, where our input so far
-    "  is stripped. We save the last-seen prefix and use
-    "  that in such cases
-    " NB: The optional arg is provided when delegated from
-    "  the filter completion to support some weird behavior
-    "  observed in vim where the "line before cursor" isn't
-    "  the same between the initial findstart call and the
-    "  second call to get matches
-    let prefix = a:0 ? s:FindPrefix(a:1) : s:FindPrefix()
-    if prefix ==# ''
-        let prefix = s:expected_prefix
-    endif
-    if prefix ==# ''
-        " Still nothing? Okay; return -2 means 'stay in
-        "  completion mode'
-        return -2
-    endif
-
     if a:findstart
+        let prefix = a:0 ? s:FindPrefix(a:1) : s:FindPrefix()
         let cursor = col('.')
         if cursor <= 2
             return 0
         endif
-        return col('.') - 1 - strlen(prefix)
+        let start = cursor - 1 - strlen(prefix)
+        let b:bar = [cursor, strlen(prefix), getline('.'), start]
+        return start
+    endif
+
+    let prefix = a:base
+    if prefix ==# ''
+        " Still nothing? Okay; return -2 means 'stay in
+        "  completion mode'
+        let b:bar = [-2]
+        let b:foo = [-2]
+        call s:FinishComplete()
+        return -2
     endif
 
     let raw = copy(prefix)
     let type = prefix[0]
     let prefix = prefix[1:] " trim the # or @
-    let b:foo = [raw, type, prefix]
+    let b:foo = [raw, type, prefix, a:base]
 
     let items = []
     let matchField = ''
     let wordField = ''
     let menuField = ''
     try
-        if type == '@'
+        if type ==# '@'
             let items = lily#users#Get(repo_dir)
             let matchField = 'login'
             let wordField = 'login'
-        elseif type == '#'
+        elseif type ==# '#'
             " TODO: support cross-repo refs
             let items = lily#issues#Get(repo_dir)
             let matchField = 'title'
             let wordField = 'number'
             let menuField = 'title'
         endif
-    catch 
-        echo "Unable to load completions"
+    catch
+        echo 'Unable to load completions'
         return -3 " stop completion silently
     endtry
 
+    if items == 0
+        " no completions; possibly not a github repo
+        return -3
+    endif
 
     let filtered = filter(copy(items),
                 \ 'lily#match#do(v:val, prefix, matchField)')
@@ -217,6 +242,10 @@ endfunction " }}}
 "
 
 function! s:EnableCursorMovedAutocommands() " {{{
+    if s:HasYCM()
+        return
+    endif
+
     augroup lilycursormove
         autocmd!
         autocmd TextChangedI <buffer> call s:OnTextChangedInsertMode()
